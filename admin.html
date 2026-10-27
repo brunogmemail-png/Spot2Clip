@@ -25,6 +25,9 @@ code{background:var(--bg);padding:2px 6px;border-radius:6px;font-size:12px;word-
 .ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}
 .guide ol{margin:4px 0 8px;padding-left:20px}.guide li{margin:3px 0}
 details summary{cursor:pointer;font-weight:600}
+.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin:10px 0}
+.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .3s}
+a{color:var(--acc2)}
 </style>
 </head>
 <body>
@@ -58,6 +61,15 @@ details summary{cursor:pointer;font-weight:600}
   </div>
 
   <div class="card">
+    <div class="flex"><h2 class="grow">Limite diário do YouTube</h2><button class="sm" id="btnQ">Atualizar</button></div>
+    <div><b id="qTxt">–</b></div>
+    <div class="bar"><i id="qBar"></i></div>
+    <small id="qSub"></small>
+    <p style="margin:8px 0 0"><small id="qMode"></small></p>
+    <p style="margin:6px 0 0"><small>Número oficial do Google (com alguns minutos de atraso): <a href="https://console.cloud.google.com/apis/api/youtube.googleapis.com/quotas" target="_blank" rel="noopener">abrir no Google Cloud</a>.</small></p>
+  </div>
+
+  <div class="card">
     <h2>2 · Publicar a configuração</h2>
     <p class="mute" style="margin-top:0">Copie o texto abaixo e cole no arquivo <code>config.js</code> do seu repositório no GitHub (lápis de editar → colar → <b>Commit changes</b>). Em cerca de 1 minuto o site já usa os novos dados.</p>
     <textarea id="out" readonly></textarea>
@@ -87,13 +99,14 @@ details summary{cursor:pointer;font-weight:600}
         <li><b>Tela de permissão OAuth</b> (ou “Google Auth Platform”): nome do app, seu e-mail, público <b>Externo</b>. Em <b>Usuários de teste</b>, adicione o e-mail de quem for usar (até 100).</li>
         <li><b>Credenciais → Criar credenciais → ID do cliente OAuth → Aplicativo da Web</b>. Em <b>Origens JavaScript autorizadas</b>, cole a origem acima. Crie e copie o ID do cliente.</li>
       </ol></details>
-    <details><summary>C · Cloudflare Worker (lê a playlist do Spotify)</summary>
+    <details><summary>C · Cloudflare Worker (lê a playlist e conta o limite do YouTube)</summary>
       <ol>
         <li>Crie uma conta no plano grátis em <b>dash.cloudflare.com</b>.</li>
-        <li><b>Workers &amp; Pages → Create → Create Worker</b> (modelo Hello World), nome <code>spot2clip-proxy</code> → <b>Deploy</b>.</li>
+        <li>No menu da esquerda: <b>Compute → Workers &amp; Pages → Create</b> (ou, na página inicial, <b>Create app</b>) e escolha começar com <b>Hello World</b>. Nome: <code>spot2clip-proxy</code> → <b>Deploy</b>.</li>
         <li><b>Edit code</b> → apague tudo → cole o conteúdo de <code>worker.js</code> → <b>Deploy</b>.</li>
         <li>Copie o endereço <code>….workers.dev</code> para o campo acima.</li>
         <li>Recomendado: <b>Settings → Variables and Secrets</b> → crie <code>ALLOWED_ORIGIN</code> com a origem acima, para só o seu site usar o Worker.</li>
+        <li><b>Contador compartilhado do limite do YouTube</b> (recomendado): em <b>Storage &amp; databases → KV → Create</b>, crie um namespace chamado <code>spot2clip-quota</code>. Depois, no Worker, abra <b>Settings → Bindings → Add → KV namespace</b>, use o nome de variável <code>QUOTA</code>, escolha o namespace criado e faça <b>Deploy</b>. Sem isso, o site usa só uma estimativa de cada navegador.</li>
       </ol></details>
   </div>
 </div>
@@ -155,7 +168,33 @@ function refresh(){
   else if(/^\d+-[\w-]+\.apps\.googleusercontent\.com$/.test(g)){m.textContent='✓ formato válido';m.className='ok'}
   else {m.textContent='Esse código deveria terminar em .apps.googleusercontent.com';m.className='warn'}
 }
+const QL=10000,CPS=151;
+function msUntilPacificMidnight(now=new Date()){
+  const p=new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',hour:'numeric',minute:'numeric',second:'numeric',hour12:false}).formatToParts(now);
+  const g=t=>+p.find(x=>x.type===t).value; let h=g('hour'); if(h===24)h=0;
+  return (86400-(h*3600+g('minute')*60+g('second')))*1000;
+}
+function resetInfo(now=new Date()){const at=new Date(now.getTime()+msUntilPacificMidnight(now));return {txt:at.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),day:at.toDateString()===now.toDateString()?'hoje':'amanhã'}}
+async function refreshQ(){
+  const w=$('#cfgW').value.trim().replace(/\/+$/,''),rs=resetInfo();
+  const set=(t,sub,mode,pct,cls)=>{$('#qTxt').textContent=t;$('#qSub').textContent=sub;$('#qMode').textContent=mode;const b=$('#qBar');b.style.width=pct+'%';b.style.background=cls}
+  if(!w) return set('–','','Preencha o endereço do Worker para ver o contador.',0,'');
+  try{
+    const j=await (await fetch(w+'/quota')).json();
+    if(!j.enabled) return set('Contador compartilhado desligado','Renova '+rs.day+' às '+rs.txt,'O Worker ainda não tem o KV “QUOTA” ligado (guia C, último passo). Enquanto isso, cada navegador usa uma estimativa própria.',0,'');
+    const left=Math.max(0,QL-j.used),pct=Math.min(100,j.used/QL*100),songs=Math.floor(left/CPS);
+    set(left<=0?'Limite de hoje atingido':`≈ ${songs} música${songs===1?'':'s'} restantes hoje`,
+        `${j.used.toLocaleString('pt-BR')} de ${QL.toLocaleString('pt-BR')} unidades usadas · renova ${rs.day} às ${rs.txt}`,
+        '✓ Contador compartilhado ativo (soma o uso de todos os usuários do site). Conta só o que passou pelo app a partir de quando o KV foi ligado; o número oficial pode ser um pouco maior.',
+        pct,pct>=90?'var(--bad)':pct>=70?'var(--warn)':'');
+  }catch(e){set('–','','Não consegui falar com o Worker: '+e.message,0,'')}
+}
+let qT;
 function init(){
+  qT=setInterval(refreshQ,20000);
+  $('#btnQ').onclick=refreshQ;
+  let d;$('#cfgW').addEventListener('input',()=>{clearTimeout(d);d=setTimeout(refreshQ,600)});
+  setTimeout(refreshQ,0);
   const l=local();
   $('#cfgG').value=l.googleClientId||C.googleClientId||'';
   $('#cfgW').value=l.workerUrl||C.workerUrl||'';

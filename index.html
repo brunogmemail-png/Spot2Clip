@@ -12,7 +12,7 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
 .wrap{max-width:880px;margin:0 auto;padding:18px 16px 80px}
-header{display:flex;align-items:center;margin-bottom:6px}
+header{display:flex;justify-content:center;align-items:center;margin-bottom:10px}
 .logo{font-weight:800;font-size:20px;letter-spacing:-.5px;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero{text-align:center;padding:26px 6px 22px}
 .hero h1{font-size:clamp(26px,5.4vw,40px);line-height:1.15;margin:0 0 10px;letter-spacing:-1px}
@@ -49,6 +49,8 @@ details select{margin:6px 0}
 .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .grow{flex:1}
 .banner{background:#1f1a2e;border:1px solid #3b2f66}
+.quota{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin:0 0 6px}
+.quota .bar{margin:8px 0 6px}
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#fff;color:#111;padding:11px 18px;border-radius:12px;max-width:90vw;box-shadow:0 8px 30px #0008;display:none;z-index:9}
 #rows.only-review .row.hi{display:none}
 @media(max-width:640px){.row{grid-template-columns:auto 1fr}.row img,.noimg{width:100%;height:auto;aspect-ratio:16/9}.row .acts{grid-column:1/-1}}
@@ -57,6 +59,12 @@ details select{margin:6px 0}
 <body>
 <div class="wrap">
 <header><div class="logo">Spot2Clip</div></header>
+
+<div class="quota" id="quota" hidden>
+  <div class="flex"><b>Limite diário do YouTube</b><span class="grow"></span><span id="qTxt"></span></div>
+  <div class="bar"><i id="qBar"></i></div>
+  <small id="qSub"></small>
+</div>
 
 <div id="notReady" class="card banner" hidden>
   <b>Estamos terminando de preparar o app.</b><br><span class="mute">Volte em alguns minutos.</span>
@@ -184,6 +192,11 @@ function score(tr,v){
   return Math.round(s);
 }
 const confOfScore = s => s>=95?'high':s>=60?'medium':'low';
+function msUntilPacificMidnight(now=new Date()){
+  const p=new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',hour:'numeric',minute:'numeric',second:'numeric',hour12:false}).formatToParts(now);
+  const g=t=>+p.find(x=>x.type===t).value; let h=g('hour'); if(h===24)h=0;
+  return (86400-(h*3600+g('minute')*60+g('second')))*1000;
+}
 
 function parseCSV(text){
   text=text.replace(/^﻿/,'');
@@ -234,11 +247,53 @@ const NOT_READY_MSG='O app ainda está sendo preparado. Tente novamente em algun
 let toastT;
 function toast(msg,ms=5000){const t=$('#toast');t.textContent=msg;t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',ms)}
 
-/* ============ limite diário do YouTube (estimativa local) ============ */
-const QUOTA_LIMIT=10000;
+/* ============ limite diário do YouTube ============ */
+const QUOTA_LIMIT=10000, COST_PER_SONG=151;   // ~101 para buscar + 50 para adicionar
 const pacificDay=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Los_Angeles'}).format(new Date());
-function quotaUsed(){const q=store.get('s2c_quota',{});return q.day===pacificDay()?q.used:0}
-function addQuota(n){store.set('s2c_quota',{day:pacificDay(),used:quotaUsed()+n})}
+function localUsed(){const q=store.get('s2c_quota',{});return q.day===pacificDay()?q.used:0}
+let qShared=null, qPending=0, qTimer=null;   // contador compartilhado (Worker + KV)
+function resetInfo(now=new Date()){
+  const ms=msUntilPacificMidnight(now),at=new Date(now.getTime()+ms);
+  return {txt:at.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),day:at.toDateString()===now.toDateString()?'hoje':'amanhã',ms};
+}
+function quotaState(){
+  const shared=!!(qShared&&qShared.enabled),used=shared?qShared.used:localUsed();
+  return {shared,used,left:Math.max(0,QUOTA_LIMIT-used)};
+}
+function addQuota(n){
+  store.set('s2c_quota',{day:pacificDay(),used:localUsed()+n});
+  if(qShared&&qShared.enabled){ qShared.used+=n; qPending+=n; if(!qTimer) qTimer=setTimeout(flushQuota,5000); }
+  renderQuota();
+}
+async function flushQuota(){
+  clearTimeout(qTimer);qTimer=null;
+  const w=cfg().workerUrl; if(!w||!qPending) return;
+  while(qPending>0){
+    const n=Math.min(qPending,2000);
+    try{
+      const r=await fetch(w+'/quota',{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({units:n})});
+      const j=await r.json(); if(j&&j.enabled) qShared=j;
+      qPending-=n;
+    }catch{ break }
+  }
+  renderQuota();
+}
+async function refreshQuota(){
+  const w=cfg().workerUrl;
+  if(w&&!qPending){
+    try{ const j=await (await fetch(w+'/quota')).json(); qShared=(j&&j.enabled)?j:{enabled:false}; }catch{}
+  }
+  renderQuota();
+}
+function renderQuota(){
+  const el=$('#quota'); if(!el) return;
+  el.hidden=!cfg().googleClientId;
+  const {shared,used,left}=quotaState(),rs=resetInfo(),pct=Math.min(100,used/QUOTA_LIMIT*100),songs=Math.floor(left/COST_PER_SONG);
+  const bar=$('#qBar');bar.style.width=pct+'%';bar.style.background=pct>=90?'var(--bad)':pct>=70?'var(--warn)':'';
+  $('#qTxt').textContent=left<=0?'Limite de hoje atingido':`≈ ${songs} música${songs===1?'':'s'} restantes hoje`;
+  $('#qSub').textContent=`${used.toLocaleString('pt-BR')} de ${QUOTA_LIMIT.toLocaleString('pt-BR')} unidades usadas · renova ${rs.day} às ${rs.txt} · ${shared?'contador compartilhado entre todos os usuários':'estimativa deste navegador'}`;
+  if(typeof src!=='undefined'&&src&&!$('#ready').hidden) renderReadyNote();
+}
 
 /* ============ YouTube ============ */
 let yt={token:null,exp:0};
@@ -322,15 +377,23 @@ document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
   ['tSp','tCsv'].forEach(id=>$('#'+id).hidden=id!==b.dataset.tab);
 });
+function renderReadyNote(){
+  if(!src) return;
+  const n=src.tracks.length,{left}=quotaState(),rs=resetInfo(),need=n*COST_PER_SONG+50,notes=[];
+  if(need>left){
+    const can=Math.max(0,Math.floor((left-50)/COST_PER_SONG));
+    notes.push(can>0
+      ?`Hoje ainda dá para converter cerca de ${can} das ${n} músicas, por causa do limite diário do YouTube. O resto continua ${rs.day} às ${rs.txt}, de onde você parou.`
+      :`O limite diário do YouTube já foi atingido hoje. A conversão só continua ${rs.day} às ${rs.txt}.`);
+  }
+  if(src.capped) notes.push('O Spotify costuma mostrar só as 100 primeiras músicas pelo link. Se faltar alguma, use a aba “Arquivo CSV / lista”.');
+  $('#readyNote').textContent=notes.join(' ');
+}
 function showReady(){
   const n=src.tracks.length;
   $('#ready').hidden=false;
   $('#readyTxt').innerHTML=`<b>${esc(src.name)}</b> · ${n} música${n===1?'':'s'}`;
-  const notes=[];
-  if(n>60) notes.push('Playlists grandes podem levar mais de um dia por causa do limite diário do YouTube. O app guarda o progresso e você continua de onde parou.');
-  if(src.capped) notes.push('O Spotify costuma mostrar só as 100 primeiras músicas pelo link. Se faltar alguma, use a aba “Arquivo CSV / lista”.');
-  $('#readyNote').textContent=notes.join(' ');
-  renderChips();
+  renderReadyNote();renderChips();
   $('#ready').scrollIntoView({behavior:'smooth'});
 }
 let linkTimer;
@@ -385,7 +448,7 @@ async function runSearch(){
   if(busy) return;
   const todo=state.rows.filter(r=>r.status==='pending');
   if(!todo.length) return;
-  const left=Math.max(0,QUOTA_LIMIT-quotaUsed());
+  const left=quotaState().left;
   if(todo.length*101>left && !confirm(`Esta playlist tem ${todo.length} músicas e, pelo limite diário do YouTube, dá para buscar cerca de ${Math.floor(left/101)} hoje. Vamos buscar até onde der e você continua amanhã, de onde parou. Seguir?`)) return;
   busy=true;$('#btnContinueSearch').hidden=true;
   const bar=$('#searchBar');bar.hidden=false;bar.firstElementChild.style.width='0';
@@ -405,7 +468,7 @@ async function runSearch(){
     }
   };
   await Promise.all([worker(),worker(),worker()]);
-  saveState();busy=false;bar.hidden=true;renderSummary();
+  saveState();busy=false;bar.hidden=true;renderSummary();flushQuota();
   if(stop==='quota') toast('Atingimos o limite diário do YouTube. Seu progresso foi salvo: volte amanhã e clique em “Continuar busca”.',10000);
   if(stop==='auth') toast('Sua sessão do Google expirou. Clique em “Continuar busca” para entrar de novo.',9000);
 }
@@ -498,7 +561,7 @@ $('#btnCreate').onclick=async()=>{
     stop=isQuota(e)?'quota':e.message==='AUTH'?'auth':'err';
     if(stop==='err') toast(e.message,9000);
   }
-  saveState();busy=false;$('#btnCreate').disabled=false;bar.hidden=true;renderSummary();
+  saveState();busy=false;$('#btnCreate').disabled=false;bar.hidden=true;renderSummary();flushQuota();
   const left=items.filter(r=>!r.inserted&&!r.err).length;
   if(stop==='quota') return toast(`Atingimos o limite diário do YouTube, faltam ${left} vídeos. Volte amanhã e clique em “Criar playlist” de novo: continuamos de onde parou.`,10000);
   if(stop==='auth') return toast('Sua sessão do Google expirou. Clique em “Criar playlist” para entrar de novo e continuar.',8000);
@@ -528,7 +591,9 @@ function checkResume(){
 }
 
 /* ============ init ============ */
-renderChips();checkResume();
+renderChips();checkResume();renderQuota();refreshQuota();
+setInterval(refreshQuota,60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshQuota()});
 if(!cfg().googleClientId) $('#notReady').hidden=false;
 </script>
 </body>
