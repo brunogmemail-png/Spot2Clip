@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Spot2Clip · Administração</title>
+<script src="config.js"></script>
+<style>
+:root{--bg:#0e1013;--card:#171a20;--card2:#1d2129;--line:#272c36;--text:#eef1f5;--mute:#8c95a3;--acc:#ff4d6d;--acc2:#7c5cff;--ok:#2ecc71;--warn:#f5b73b;--bad:#ff5d5d}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:22px 16px 80px}
+h1{font-size:20px;margin:0 0 4px}h2{font-size:17px;margin:0 0 6px}h3{font-size:14px;margin:14px 0 4px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
+.mute,small{color:var(--mute)}
+button{font:inherit;color:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card2);border-radius:10px;padding:9px 14px}
+button.primary{background:linear-gradient(90deg,var(--acc),var(--acc2));border:0;font-weight:600;color:#fff}
+button.sm{padding:4px 9px;font-size:12px}
+input,textarea{font:inherit;color:inherit;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;min-height:150px}
+label{display:block;margin:12px 0 4px;font-weight:600}
+code{background:var(--bg);padding:2px 6px;border-radius:6px;font-size:12px;word-break:break-all}
+.flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.grow{flex:1}
+.ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}
+.guide ol{margin:4px 0 8px;padding-left:20px}.guide li{margin:3px 0}
+details summary{cursor:pointer;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Spot2Clip · Administração</h1>
+<p class="mute" style="margin-top:0">Painel do dono do site. Este endereço não aparece em nenhuma página.</p>
+
+<!-- PORTÃO -->
+<div class="card" id="gate">
+  <h2 id="gateTitle">Senha</h2>
+  <p class="mute" id="gateText"></p>
+  <label for="pw1">Senha</label><input type="password" id="pw1" autocomplete="current-password">
+  <div id="pw2wrap" hidden><label for="pw2">Repita a senha</label><input type="password" id="pw2" autocomplete="new-password"></div>
+  <div class="flex" style="margin-top:12px"><button class="primary" id="btnGate">Entrar</button><small id="gateMsg"></small></div>
+</div>
+
+<!-- PAINEL -->
+<div id="panel" hidden>
+  <div class="card">
+    <h2>1 · Dados do app</h2>
+    <label for="cfgG">Google OAuth Client ID</label>
+    <input type="text" id="cfgG" autocomplete="off" placeholder="1234-abc.apps.googleusercontent.com">
+    <small id="gMsg"></small>
+    <label for="cfgW">Endereço do Worker (Cloudflare)</label>
+    <input type="text" id="cfgW" autocomplete="off" placeholder="https://spot2clip-proxy.SEUNOME.workers.dev">
+    <div class="flex" style="margin-top:8px"><button id="btnPing">Testar o Worker</button><small id="wMsg"></small></div>
+
+    <h3>Testar a leitura de uma playlist pública</h3>
+    <div class="flex"><input type="text" id="tLink" class="grow" placeholder="https://open.spotify.com/playlist/…"><button id="btnTest">Ler</button></div>
+    <pre id="tOut" class="mute" style="white-space:pre-wrap;font-size:12.5px;margin:8px 0 0"></pre>
+  </div>
+
+  <div class="card">
+    <h2>2 · Publicar a configuração</h2>
+    <p class="mute" style="margin-top:0">Copie o texto abaixo e cole no arquivo <code>config.js</code> do seu repositório no GitHub (lápis de editar → colar → <b>Commit changes</b>). Em cerca de 1 minuto o site já usa os novos dados.</p>
+    <textarea id="out" readonly></textarea>
+    <div class="flex" style="margin-top:8px"><button class="primary" id="btnCopy">Copiar config.js</button><button id="btnLocal">Testar só neste navegador</button><button id="btnLocalClear">Limpar teste</button></div>
+    <p><small>“Testar só neste navegador” usa os dados acima apenas aqui, sem publicar, para você experimentar o site antes.</small></p>
+  </div>
+
+  <div class="card">
+    <h2>3 · Trocar senha</h2>
+    <div class="flex"><input type="password" id="npw" class="grow" placeholder="Nova senha (mínimo 8 caracteres)" autocomplete="new-password"><button id="btnNpw">Definir</button></div>
+    <small id="npwMsg">Depois de trocar, copie e publique o config.js novamente.</small>
+  </div>
+
+  <div class="card guide">
+    <h2>Guia de instalação</h2>
+    <p class="mute" style="margin-top:0">Origem do seu site (usada no Google e no Cloudflare): <code id="origin"></code></p>
+    <details open><summary>A · Publicar o site no GitHub Pages</summary>
+      <ol>
+        <li>Crie uma conta grátis em <b>github.com</b> → <b>New repository</b> (nome: <code>spot2clip</code>, público).</li>
+        <li><b>uploading an existing file</b> → envie <code>index.html</code>, <code>admin.html</code>, <code>config.js</code> e <code>worker.js</code> → <b>Commit changes</b>.</li>
+        <li><b>Settings → Pages</b>: Branch <code>main</code>, pasta <code>/ (root)</code>. Em ~1 minuto o site abre em <code>https://SEUUSUARIO.github.io/spot2clip/</code> e este painel em <code>…/spot2clip/admin.html</code>.</li>
+      </ol></details>
+    <details><summary>B · Google / YouTube (Client ID)</summary>
+      <ol>
+        <li>Em <b>console.cloud.google.com</b>, crie um <b>novo projeto</b>.</li>
+        <li><b>APIs e serviços → Biblioteca</b> → <b>YouTube Data API v3</b> → <b>Ativar</b>.</li>
+        <li><b>Tela de permissão OAuth</b> (ou “Google Auth Platform”): nome do app, seu e-mail, público <b>Externo</b>. Em <b>Usuários de teste</b>, adicione o e-mail de quem for usar (até 100).</li>
+        <li><b>Credenciais → Criar credenciais → ID do cliente OAuth → Aplicativo da Web</b>. Em <b>Origens JavaScript autorizadas</b>, cole a origem acima. Crie e copie o ID do cliente.</li>
+      </ol></details>
+    <details><summary>C · Cloudflare Worker (lê a playlist do Spotify)</summary>
+      <ol>
+        <li>Crie uma conta no plano grátis em <b>dash.cloudflare.com</b>.</li>
+        <li><b>Workers &amp; Pages → Create → Create Worker</b> (modelo Hello World), nome <code>spot2clip-proxy</code> → <b>Deploy</b>.</li>
+        <li><b>Edit code</b> → apague tudo → cole o conteúdo de <code>worker.js</code> → <b>Deploy</b>.</li>
+        <li>Copie o endereço <code>….workers.dev</code> para o campo acima.</li>
+        <li>Recomendado: <b>Settings → Variables and Secrets</b> → crie <code>ALLOWED_ORIGIN</code> com a origem acima, para só o seu site usar o Worker.</li>
+      </ol></details>
+  </div>
+</div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const C=window.SPOT2CLIP||{};
+const enc=new TextEncoder();
+const b64=u=>btoa(String.fromCharCode(...u));
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function derive(pw,salt){
+  const k=await crypto.subtle.importKey('raw',enc.encode(pw),'PBKDF2',false,['deriveBits']);
+  return new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt,iterations:200000},k,256));
+}
+const eq=(a,b)=>a.length===b.length&&a.every((v,i)=>v===b[i]);
+let session={salt:C.adminSalt||'',hash:C.adminHash||''};
+const hasPw=!!(C.adminSalt&&C.adminHash);
+
+/* ----- portão ----- */
+if(!crypto.subtle){ $('#gateText').textContent='Abra esta página por https (o GitHub Pages já faz isso).'; $('#btnGate').disabled=true; }
+else if(hasPw){ $('#gateTitle').textContent='Entrar'; $('#gateText').textContent='Digite a senha de administrador.'; }
+else { $('#gateTitle').textContent='Primeiro acesso: crie uma senha'; $('#gateText').textContent='Ainda não há senha definida. Crie uma (mínimo 8 caracteres, quanto maior melhor). Ela só passa a valer depois que você publicar o config.js gerado no passo 2.'; $('#pw2wrap').hidden=false; $('#btnGate').textContent='Criar senha e entrar'; }
+async function gate(){
+  const pw=$('#pw1').value,msg=$('#gateMsg');msg.textContent='';
+  try{
+    if(hasPw){
+      const h=await derive(pw,unb64(C.adminSalt));
+      if(!eq(h,unb64(C.adminHash))){msg.textContent='Senha incorreta.';msg.className='bad';return}
+    }else{
+      if(pw.length<8){msg.textContent='Use pelo menos 8 caracteres.';msg.className='bad';return}
+      if(pw!==$('#pw2').value){msg.textContent='As senhas não conferem.';msg.className='bad';return}
+      const salt=crypto.getRandomValues(new Uint8Array(16));
+      session={salt:b64(salt),hash:b64(await derive(pw,salt))};
+    }
+    $('#gate').hidden=true;$('#panel').hidden=false;init();
+  }catch(e){msg.textContent='Erro: '+e.message;msg.className='bad'}
+}
+$('#btnGate').onclick=gate;
+['pw1','pw2'].forEach(id=>$('#'+id).addEventListener('keydown',e=>{if(e.key==='Enter')gate()}));
+
+/* ----- painel ----- */
+const local=()=>{try{return JSON.parse(localStorage.getItem('s2c_cfg')||'{}')||{}}catch{return {}}};
+function genConfig(){
+  const g=$('#cfgG').value.trim(),w=$('#cfgW').value.trim().replace(/\/+$/,'');
+  return `// Configuração do Spot2Clip. Este arquivo é gerado pelo painel admin.html.
+window.SPOT2CLIP = {
+  googleClientId: ${JSON.stringify(g)},
+  workerUrl: ${JSON.stringify(w)},
+  adminSalt: ${JSON.stringify(session.salt)},
+  adminHash: ${JSON.stringify(session.hash)}
+};
+`;
+}
+function refresh(){
+  $('#out').value=genConfig();
+  const g=$('#cfgG').value.trim(),m=$('#gMsg');
+  if(!g){m.textContent='';}
+  else if(/^\d+-[\w-]+\.apps\.googleusercontent\.com$/.test(g)){m.textContent='✓ formato válido';m.className='ok'}
+  else {m.textContent='Esse código deveria terminar em .apps.googleusercontent.com';m.className='warn'}
+}
+function init(){
+  const l=local();
+  $('#cfgG').value=l.googleClientId||C.googleClientId||'';
+  $('#cfgW').value=l.workerUrl||C.workerUrl||'';
+  $('#origin').textContent=location.origin;
+  ['cfgG','cfgW'].forEach(id=>$('#'+id).addEventListener('input',refresh));
+  refresh();
+}
+$('#btnCopy').onclick=()=>navigator.clipboard.writeText($('#out').value).then(()=>{$('#btnCopy').textContent='Copiado ✓';setTimeout(()=>$('#btnCopy').textContent='Copiar config.js',2000)});
+$('#btnLocal').onclick=()=>{localStorage.setItem('s2c_cfg',JSON.stringify({googleClientId:$('#cfgG').value.trim(),workerUrl:$('#cfgW').value.trim().replace(/\/+$/,'')}));$('#btnLocal').textContent='Salvo ✓ (abra o site)';setTimeout(()=>$('#btnLocal').textContent='Testar só neste navegador',2500)};
+$('#btnLocalClear').onclick=()=>{localStorage.removeItem('s2c_cfg');$('#btnLocalClear').textContent='Limpo ✓';setTimeout(()=>$('#btnLocalClear').textContent='Limpar teste',2000)};
+$('#btnNpw').onclick=async()=>{
+  const pw=$('#npw').value,m=$('#npwMsg');
+  if(pw.length<8){m.textContent='Use pelo menos 8 caracteres.';m.className='bad';return}
+  const salt=crypto.getRandomValues(new Uint8Array(16));
+  session={salt:b64(salt),hash:b64(await derive(pw,salt))};
+  $('#npw').value='';refresh();m.textContent='Nova senha pronta: copie e publique o config.js do passo 2.';m.className='ok';
+};
+async function callWorker(q){
+  const w=$('#cfgW').value.trim().replace(/\/+$/,'');
+  if(!w) throw new Error('Preencha o endereço do Worker.');
+  const r=await fetch(w+'/?playlist='+encodeURIComponent(q));
+  return {status:r.status,body:await r.json().catch(()=>null)};
+}
+$('#btnPing').onclick=async()=>{
+  const m=$('#wMsg');m.textContent='Testando…';m.className='mute';
+  try{
+    const r=await callWorker('teste');
+    if(r.body&&r.body.error==='link_invalido'){m.textContent='✓ O Worker respondeu corretamente.';m.className='ok'}
+    else if(r.status===403){m.textContent='O Worker bloqueou esta página (ALLOWED_ORIGIN). Confira se é a origem exata do site.';m.className='warn'}
+    else{m.textContent='O endereço respondeu, mas não parece ser o Worker do Spot2Clip.';m.className='warn'}
+  }catch(e){m.textContent='Não consegui falar com o Worker: '+e.message;m.className='bad'}
+};
+$('#btnTest').onclick=async()=>{
+  const o=$('#tOut');o.textContent='Lendo…';
+  try{
+    const r=await callWorker($('#tLink').value.trim());
+    if(r.body&&r.body.tracks){
+      o.textContent=`✓ “${r.body.name}”: ${r.body.tracks.length} músicas.\n`+r.body.tracks.slice(0,5).map((t,i)=>`${i+1}. ${t.title} — ${t.artists.join(', ')} (${t.durationSec||'?'}s)`).join('\n')+(r.body.tracks.length>5?'\n…':'');
+    }else o.textContent='Falhou: '+((r.body&&r.body.error)||r.status)+'\n(erros comuns: playlist privada, link errado, ou o Spotify mudou a página)';
+  }catch(e){o.textContent='Falhou: '+e.message}
+};
+</script>
+</body>
+</html>

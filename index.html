@@ -3,106 +3,89 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Spot2Clip</title>
+<title>Spot2Clip · Playlist do Spotify em videoclipes</title>
+<meta name="description" content="Transforme sua playlist do Spotify em uma playlist de videoclipes no YouTube, pronta para a TV da sala.">
+<script src="config.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{--bg:#0e1013;--card:#171a20;--card2:#1d2129;--line:#272c36;--text:#eef1f5;--mute:#8c95a3;--acc:#ff4d6d;--acc2:#7c5cff;--ok:#2ecc71;--warn:#f5b73b;--bad:#ff5d5d}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-.wrap{max-width:920px;margin:0 auto;padding:20px 16px 80px}
-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
-.logo{font-weight:800;font-size:22px;letter-spacing:-.5px;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
-.tag{color:var(--mute);font-size:13px;flex:1;min-width:180px}
-.chip{background:var(--card);border:1px solid var(--line);border-radius:99px;padding:4px 10px;font-size:12px;color:var(--mute)}
-.chip.on{color:var(--ok);border-color:#1f5c3a}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:880px;margin:0 auto;padding:18px 16px 80px}
+header{display:flex;align-items:center;margin-bottom:6px}
+.logo{font-weight:800;font-size:20px;letter-spacing:-.5px;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero{text-align:center;padding:26px 6px 22px}
+.hero h1{font-size:clamp(26px,5.4vw,40px);line-height:1.15;margin:0 0 10px;letter-spacing:-1px}
+.hero h1 span{background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{margin:0 auto;max-width:520px;color:var(--mute);font-size:17px}
 button,select,input,textarea{font:inherit;color:inherit}
-button{cursor:pointer;border:1px solid var(--line);background:var(--card2);border-radius:10px;padding:9px 14px}
+button{cursor:pointer;border:1px solid var(--line);background:var(--card2);border-radius:12px;padding:10px 16px}
 button:hover{border-color:#3a4150}
-button.primary{background:linear-gradient(90deg,var(--acc),var(--acc2));border:0;font-weight:600;color:#fff}
+button.primary{background:linear-gradient(90deg,var(--acc),var(--acc2));border:0;font-weight:700;color:#fff}
 button.primary:disabled{opacity:.5;cursor:wait}
-button.ghost{background:transparent}
-button.sm{padding:4px 9px;font-size:12px;border-radius:8px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
-h2{margin:0 0 4px;font-size:17px}
-.mute{color:var(--mute)}
-small{color:var(--mute)}
+button.big{padding:14px 24px;font-size:16px;border-radius:99px}
+button.sm{padding:4px 10px;font-size:13px;border-radius:8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:16px}
+h2{margin:0 0 6px;font-size:18px}
+.mute,small{color:var(--mute)}
 .tabs{display:flex;gap:6px;margin:12px 0}
-.tabs button{border-radius:99px;padding:6px 14px}
+.tabs button{border-radius:99px;padding:6px 16px}
 .tabs button.on{background:var(--text);color:#111;border-color:var(--text)}
-input[type=text],input[type=search],textarea,select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+input[type=text],textarea,select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:11px 13px}
 textarea{min-height:110px;resize:vertical}
-.pls{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;margin-top:10px;max-height:380px;overflow:auto}
-.pl{display:flex;gap:10px;align-items:center;text-align:left;padding:8px}
-.pl img{width:44px;height:44px;border-radius:6px;object-fit:cover;background:var(--line)}
-.pl span{display:flex;flex-direction:column;min-width:0}
-.pl b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
 .row{display:grid;grid-template-columns:auto 120px 1fr auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
 .row:first-child{border-top:0}
 .row img{width:120px;height:68px;border-radius:8px;object-fit:cover;background:var(--line);display:block}
 .noimg{width:120px;height:68px;border-radius:8px;background:var(--card2);display:grid;place-items:center;color:var(--mute);font-size:12px}
 .row .sp{font-weight:600}
-.row .vd{color:var(--mute);font-size:13px;overflow:hidden;text-overflow:ellipsis}
+.row .vd{color:var(--mute);font-size:14px;overflow:hidden;text-overflow:ellipsis}
 .row.off{opacity:.45}
-.badge{font-size:11px;font-weight:700;border-radius:99px;padding:2px 8px;border:1px solid}
+.badge{font-size:12px;font-weight:700;border-radius:99px;padding:2px 9px;border:1px solid;white-space:nowrap}
 .badge.ok{color:var(--ok);border-color:#1f5c3a}.badge.warn{color:var(--warn);border-color:#6b5217}.badge.bad{color:var(--bad);border-color:#6b2a2a}.badge.mute{color:var(--mute);border-color:var(--line)}
-details summary{cursor:pointer;color:var(--acc2);font-size:13px;margin-top:4px}
+details summary{cursor:pointer;color:var(--acc2);font-size:14px;margin-top:6px}
 details select{margin:6px 0}
-.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin:10px 0}
+.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin:12px 0}
 .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .2s}
 .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .grow{flex:1}
 .banner{background:#1f1a2e;border:1px solid #3b2f66}
-.big{padding:13px 22px;font-weight:700;border:0;border-radius:99px;font-size:15px}
-.btn-sp{background:#1db954;color:#04210f}.btn-g{background:#fff;color:#222}
-.big.done{background:var(--card2);color:var(--ok);border:1px solid #1f5c3a;cursor:default}
-#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#fff;color:#111;padding:10px 16px;border-radius:12px;max-width:90vw;box-shadow:0 8px 30px #0008;display:none;z-index:9}
-dialog{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:16px;max-width:680px;width:94vw;max-height:92vh;overflow:auto}
-.guide{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:6px 14px;margin:10px 0}
-.guide h3{margin:12px 0 4px;font-size:14px}.guide ol{margin:4px 0 8px;padding-left:20px}.guide li{margin:3px 0}
-dialog::backdrop{background:#000a}
-dialog label{display:block;margin:12px 0 4px;font-weight:600}
-code{background:var(--bg);padding:2px 6px;border-radius:6px;font-size:12px;word-break:break-all}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#fff;color:#111;padding:11px 18px;border-radius:12px;max-width:90vw;box-shadow:0 8px 30px #0008;display:none;z-index:9}
 #rows.only-review .row.hi{display:none}
-@media(max-width:640px){.row{grid-template-columns:auto 1fr;}.row img,.noimg{width:100%;height:auto;aspect-ratio:16/9}.row .acts{grid-column:1/-1}}
+@media(max-width:640px){.row{grid-template-columns:auto 1fr}.row img,.noimg{width:100%;height:auto;aspect-ratio:16/9}.row .acts{grid-column:1/-1}}
 </style>
 </head>
 <body>
 <div class="wrap">
-<header>
-  <div class="logo">Spot2Clip</div>
-  <div class="tag">Sua playlist do Spotify virando uma playlist de videoclipes no YouTube.</div>
-  <span class="chip" id="chipQ" title="Estimativa feita neste navegador. A cota do YouTube zera à meia-noite (horário do Pacífico).">Cota YT: 0 / 10.000</span>
-  <button class="ghost sm" id="btnCfg" hidden>⚙ Configurar</button>
-</header>
+<header><div class="logo">Spot2Clip</div></header>
+
+<div id="notReady" class="card banner" hidden>
+  <b>Estamos terminando de preparar o app.</b><br><span class="mute">Volte em alguns minutos.</span>
+</div>
 
 <div id="resume" class="card banner" hidden>
-  <div class="flex"><div class="grow"><b>Trabalho em andamento</b><br><small id="resumeTxt"></small></div>
-  <button class="primary" id="btnResume">Retomar</button><button id="btnDiscard">Descartar</button></div>
+  <div class="flex"><div class="grow"><b>Você tem uma playlist em andamento</b><br><small id="resumeTxt"></small></div>
+  <button class="primary" id="btnResume">Continuar</button><button id="btnDiscard">Descartar</button></div>
 </div>
 
 <!-- PASSO 1 -->
 <section id="s1">
-  <div class="card">
-    <h2>1 · Entre com sua conta do YouTube</h2>
-    <p class="mute" style="margin:4px 0 14px">Abre a janela oficial do Google só para você autorizar. O app nunca vê sua senha. A playlist de clipes será criada no seu canal.</p>
-    <div class="flex">
-      <button class="big btn-g" id="btnYtLogin">Entrar com Google / YouTube</button>
-    </div>
+  <div class="hero">
+    <h1>Suas playlists do Spotify em <span>videoclipes</span></h1>
+    <p>Cole o link da playlist, confira os clipes que escolhemos e assista na TV da sala.</p>
   </div>
 
   <div class="card">
-    <h2>2 · Escolha a playlist</h2>
-    <div class="tabs"><button class="on" data-tab="tSp">Link do Spotify</button><button data-tab="tCsv">CSV / lista de texto</button></div>
+    <h2>1 · Sua playlist</h2>
+    <div class="tabs"><button class="on" data-tab="tSp">Link do Spotify</button><button data-tab="tCsv">Arquivo CSV / lista</button></div>
 
     <div id="tSp">
-      <p class="mute" style="margin:0 0 8px">Cole o link da sua playlist do Spotify. Ela precisa estar <b>pública</b>.</p>
-      <div class="flex"><input type="text" id="spLink" class="grow" style="min-width:240px" placeholder="https://open.spotify.com/playlist/…" autocomplete="off"><button class="primary" id="btnLoadLink">Carregar</button></div>
-      <details><summary>Como deixar a playlist pública e pegar o link?</summary>
-        <p class="mute">No Spotify, abra a playlist → toque nos três pontinhos (⋯) → <b>Tornar pública</b>. Depois ⋯ → <b>Compartilhar → Copiar link da playlist</b>. Você pode voltar a deixá-la privada depois de usar.</p></details>
+      <div class="flex"><input type="text" id="spLink" class="grow" style="min-width:240px" placeholder="Cole aqui o link: open.spotify.com/playlist/…" autocomplete="off"><button class="primary" id="btnLoadLink">Carregar</button></div>
+      <details><summary>Como pegar o link? (a playlist precisa estar pública)</summary>
+        <p class="mute">No Spotify, abra a playlist → toque nos três pontinhos (⋯) → <b>Tornar pública</b>. Depois ⋯ → <b>Compartilhar → Copiar link da playlist</b>. Se quiser, volte a deixá-la privada depois de usar.</p></details>
     </div>
 
     <div id="tCsv" hidden>
-      <p class="mute">Envie o CSV exportado (ex.: Exportify) ou cole uma lista, uma música por linha, no formato <code>Artista - Música</code>.</p>
+      <p class="mute" style="margin-top:0">Envie um arquivo CSV exportado do Spotify (por exemplo, pelo Exportify) ou cole uma lista com uma música por linha, no formato <b>Artista - Música</b>.</p>
       <input type="file" id="file" accept=".csv,.txt,text/csv,text/plain">
       <textarea id="paste" placeholder="Coldplay - Yellow&#10;Legião Urbana - Tempo Perdido&#10;..." style="margin-top:8px"></textarea>
       <div style="margin-top:8px"><input type="text" id="csvName" placeholder="Nome da playlist (opcional)" style="margin-bottom:8px"><button class="primary" id="btnPaste">Usar esta lista</button></div>
@@ -110,10 +93,11 @@ code{background:var(--bg);padding:2px 6px;border-radius:6px;font-size:12px;word-
   </div>
 
   <div class="card" id="ready" hidden>
-    <h2>3 · Tudo pronto para buscar os clipes</h2>
+    <h2>2 · Tudo certo!</h2>
     <p id="readyTxt" style="margin:6px 0"></p>
-    <small id="readyCost"></small>
-    <div class="flex" style="margin-top:12px"><button class="primary" id="btnSearch">Buscar clipes no YouTube →</button></div>
+    <small id="readyNote"></small>
+    <div style="margin-top:14px"><button class="primary big" id="btnSearch">Continuar com Google e buscar os clipes →</button></div>
+    <p><small id="readyHint">Vamos pedir permissão ao Google para criar a playlist no seu YouTube. Se aparecer um aviso de app não verificado, clique em “Avançado” e depois em “Continuar”.</small></p>
   </div>
 </section>
 
@@ -121,88 +105,47 @@ code{background:var(--bg);padding:2px 6px;border-radius:6px;font-size:12px;word-
 <section id="s2" hidden>
   <div class="card">
     <div class="flex"><h2 class="grow" id="revTitle"></h2><button class="sm" id="btnBack">← Voltar</button></div>
+    <p class="mute" style="margin:4px 0 0">Escolhemos o videoclipe mais provável de cada música. Confira os que estão em amarelo ou vermelho e troque se quiser.</p>
     <div class="bar" id="searchBar" hidden><i></i></div>
-    <div id="summary" class="mute" style="margin:6px 0"></div>
+    <div id="summary" style="margin:10px 0"></div>
     <div class="flex">
-      <label class="flex"><input type="checkbox" id="onlyReview"> Mostrar só o que precisa de revisão</label>
+      <label class="flex"><input type="checkbox" id="onlyReview"> Mostrar só o que precisa de conferência</label>
       <button class="sm" id="btnContinueSearch" hidden>Continuar busca</button>
     </div>
   </div>
   <div class="card" id="rowsCard"><div id="rows"></div></div>
   <div class="card" id="createCard">
-    <h2>Criar no YouTube</h2>
+    <h2>Salvar no seu YouTube</h2>
     <div class="flex" style="margin:10px 0">
       <div class="grow" style="min-width:220px"><input type="text" id="ytTitle" placeholder="Nome da playlist"></div>
-      <div><select id="privacy"><option value="unlisted">Não listada (só quem tem o link)</option><option value="private">Privada</option><option value="public">Pública</option></select></div>
+      <div><select id="privacy"><option value="unlisted">Só quem tem o link (bom para a TV)</option><option value="private">Só eu</option><option value="public">Pública</option></select></div>
     </div>
     <div class="bar" id="createBar" hidden><i></i></div>
-    <div class="flex"><button class="primary" id="btnCreate">Criar playlist</button><small id="createInfo"></small></div>
+    <div class="flex"><button class="primary big" id="btnCreate">Criar playlist no meu YouTube</button><small id="createInfo"></small></div>
   </div>
 </section>
 
 <!-- PASSO 3 -->
 <section id="s3" hidden>
-  <div class="card" style="text-align:center;padding:30px 18px">
-    <div style="font-size:42px">🎬</div>
-    <h2 style="font-size:21px">Playlist criada!</h2>
+  <div class="card" style="text-align:center;padding:32px 18px">
+    <div style="font-size:44px">🎬</div>
+    <h2 style="font-size:22px">Sua playlist de clipes está pronta!</h2>
     <p class="mute" id="doneTxt"></p>
-    <div class="flex" style="justify-content:center;margin:14px 0">
-      <a id="doneLink" target="_blank" rel="noopener"><button class="primary">Abrir no YouTube</button></a>
-      <button id="btnCopy">Copiar link</button>
-      <button id="btnNew">Nova playlist</button>
+    <div class="flex" style="justify-content:center;margin:16px 0">
+      <a id="doneLink" target="_blank" rel="noopener"><button class="primary big">Abrir no YouTube</button></a>
+      <button class="big" id="btnCopy">Copiar link</button>
+      <button class="big" id="btnNew">Converter outra</button>
     </div>
-    <small>Na TV: abra o app do YouTube (logado na mesma conta) → Biblioteca → Playlists. Ou transmita pelo celular.</small>
+    <small>Na TV: abra o app do YouTube (com a mesma conta) → Biblioteca → Playlists. Ou transmita pelo celular.</small>
     <div id="failed" style="text-align:left;margin-top:16px"></div>
   </div>
 </section>
 </div>
-
-<dialog id="dlg">
-  <h2>Configuração inicial (só o dono, uma única vez)</h2>
-  <p class="mute">Quem usa o site só cola o link da playlist e entra com o Google. Estes dois dados são do <i>seu app</i> e ficam gravados no código.</p>
-  <details class="guide" open><summary><b>Passo a passo</b></summary>
-    <h3>0 · Publique o site (para ter um endereço)</h3>
-    <ol>
-      <li>Crie uma conta grátis em <b>github.com</b> → <b>New repository</b> (nome: <code>spot2clip</code>, público).</li>
-      <li>Clique em <b>uploading an existing file</b>, envie o <code>index.html</code> e salve com <b>Commit changes</b>.</li>
-      <li><b>Settings → Pages</b>: em “Branch” escolha <code>main</code> e <code>/ (root)</code>. Em ~1 minuto o endereço aparece: <code>https://SEUUSUARIO.github.io/spot2clip/</code>. Abra-o e volte a esta janela (<code>…/#setup</code>).</li>
-    </ol>
-    <h3>1 · Google/YouTube: Client ID</h3>
-    <ol>
-      <li>Entre em <b>console.cloud.google.com</b> e crie um <b>novo projeto</b> (ex.: Spot2Clip).</li>
-      <li><b>APIs e serviços → Biblioteca</b> → <b>YouTube Data API v3</b> → <b>Ativar</b>.</li>
-      <li><b>APIs e serviços → Tela de permissão OAuth</b> (ou “Google Auth Platform”): nome do app, seu e-mail, público <b>Externo</b>. Em <b>Usuários de teste</b>, adicione seu e-mail e o de cada amigo (até 100).</li>
-      <li><b>Credenciais → Criar credenciais → ID do cliente OAuth</b> → <b>Aplicativo da Web</b>. Em <b>Origens JavaScript autorizadas</b>, cole a “Origem” mostrada abaixo. Crie.</li>
-      <li>Copie o <b>ID do cliente</b> (termina em <code>.apps.googleusercontent.com</code>) e cole no campo abaixo.</li>
-    </ol>
-    <h3>2 · Mini-servidor que lê a playlist (Cloudflare, grátis)</h3>
-    <ol>
-      <li>Crie uma conta no plano grátis em <b>dash.cloudflare.com</b>.</li>
-      <li><b>Workers &amp; Pages → Create → Create Worker</b> (modelo “Hello World”), nome <code>spot2clip-proxy</code> → <b>Deploy</b>.</li>
-      <li>Clique em <b>Edit code</b>, apague tudo, cole o conteúdo do arquivo <code>worker.js</code> e clique em <b>Deploy</b>.</li>
-      <li>Copie o endereço do Worker (termina em <code>.workers.dev</code>) e cole no campo abaixo.</li>
-      <li>Opcional, recomendado: <b>Settings → Variables and Secrets</b> → crie <code>ALLOWED_ORIGIN</code> com a “Origem” mostrada abaixo, para só o seu site usar o Worker.</li>
-    </ol>
-    <h3>3 · Deixar fixo para os amigos</h3>
-    <ol>
-      <li>Com os dois campos abaixo preenchidos, clique em <b>Copiar linha para o código</b>.</li>
-      <li>No GitHub, abra o <code>index.html</code>, clique no lápis (editar), troque a linha <code>const DEFAULTS = …</code> pela linha copiada e faça Commit.</li>
-    </ol>
-  </details>
-  <label for="cfgG">Google OAuth Client ID</label><input type="text" id="cfgG" autocomplete="off">
-  <label for="cfgW">Endereço do Worker (Cloudflare)</label><input type="text" id="cfgW" autocomplete="off" placeholder="https://spot2clip-proxy.SEUNOME.workers.dev">
-  <p style="margin-top:14px"><b>Origem do seu site</b> (para o Google e para o ALLOWED_ORIGIN):<br><code id="cfgOrigin"></code></p>
-  <p class="mute">Só para testar agora no seu navegador, basta colar os dois dados e salvar.</p>
-  <div class="flex" style="justify-content:flex-end"><button id="cfgCopy">Copiar linha para o código</button><button id="cfgCancel">Fechar</button><button class="primary" id="cfgSave">Salvar</button></div>
-</dialog>
 <div id="toast"></div>
 
 <script>
-/* ============ CONFIG PADRÃO (preencha aqui para os amigos não precisarem configurar) ============ */
-const DEFAULTS = { googleClientId: '', workerUrl: '' };
-
 /*PURE-START*/
-const norm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
+const norm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const mmss = s => s ? Math.floor(s/60)+':'+String(Math.round(s%60)).padStart(2,'0') : '–';
 const KW = 'radio edit|remaster(?:ed)?|version|mono|stereo|feat\\.?|ft\\.?|with|from|live|ao vivo|deluxe|bonus';
@@ -243,7 +186,7 @@ function score(tr,v){
 const confOfScore = s => s>=95?'high':s>=60?'medium':'low';
 
 function parseCSV(text){
-  text=text.replace(/^\uFEFF/,'');
+  text=text.replace(/^﻿/,'');
   const first=text.split(/\r?\n/)[0]||'';
   const delim=(first.match(/;/g)||[]).length>(first.match(/,/g)||[]).length?';':',';
   const rows=[];let row=[],cur='',q=false;
@@ -271,7 +214,7 @@ function importText(text){
         album:'',durationSec:iDur>=0?parseDur(r[iDur]):null}));
     }
   }
-  const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).map(l=>l.replace(/^\s*\d+[\.\)]\s+/,'').trim()).filter(Boolean);
+  const lines=text.replace(/^﻿/,'').split(/\r?\n/).map(l=>l.replace(/^\s*\d+[\.\)]\s+/,'').trim()).filter(Boolean);
   return lines.map(l=>{const m=l.split(/\s+[-–—]\s+/);
     return m.length>=2?{title:m.slice(1).join(' - '),artists:[m[0].trim()],album:'',durationSec:null}:{title:l,artists:[''],album:'',durationSec:null}});
 }
@@ -279,22 +222,23 @@ function importText(text){
 
 /* ============ util ============ */
 const $ = s => document.querySelector(s);
-const sleep = ms => new Promise(r=>setTimeout(r,ms));
 const store = {
   get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}},
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}},
   del(k){try{localStorage.removeItem(k)}catch{}}
 };
-const cfg = () => ({...DEFAULTS, ...Object.fromEntries(Object.entries(store.get('s2c_cfg',{})).filter(([,v])=>v))});
+// Configuração: vem do arquivo config.js (publicado pelo administrador).
+const CFG0 = window.SPOT2CLIP || {};
+const cfg = () => { const l=store.get('s2c_cfg',{})||{}; return {googleClientId:l.googleClientId||CFG0.googleClientId||'', workerUrl:(l.workerUrl||CFG0.workerUrl||'').replace(/\/+$/,'')}; };
+const NOT_READY_MSG='O app ainda está sendo preparado. Tente novamente em alguns minutos.';
 let toastT;
-function toast(msg,ms=4500){const t=$('#toast');t.textContent=msg;t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',ms)}
+function toast(msg,ms=5000){const t=$('#toast');t.textContent=msg;t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',ms)}
 
-/* ============ cota YouTube (estimativa local) ============ */
+/* ============ limite diário do YouTube (estimativa local) ============ */
 const QUOTA_LIMIT=10000;
 const pacificDay=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Los_Angeles'}).format(new Date());
 function quotaUsed(){const q=store.get('s2c_quota',{});return q.day===pacificDay()?q.used:0}
-function addQuota(n){store.set('s2c_quota',{day:pacificDay(),used:quotaUsed()+n});renderQuota()}
-function renderQuota(){$('#chipQ').textContent='Cota YT (estim.): '+quotaUsed().toLocaleString('pt-BR')+' / '+QUOTA_LIMIT.toLocaleString('pt-BR')}
+function addQuota(n){store.set('s2c_quota',{day:pacificDay(),used:quotaUsed()+n})}
 
 /* ============ YouTube ============ */
 let yt={token:null,exp:0};
@@ -303,22 +247,22 @@ const ytOk=()=>yt.token&&Date.now()<yt.exp;
 function ytLogin(){
   return new Promise((res,rej)=>{
     const id=cfg().googleClientId;
-    if(!id){openSettings();return rej(new Error('App ainda não configurado: o dono precisa colocar o Client ID do Google (veja ⚙ Configurar).'))}
-    if(!window.google?.accounts?.oauth2) return rej(new Error('A biblioteca do Google ainda está carregando. Tente de novo.'));
+    if(!id) return rej(new Error(NOT_READY_MSG));
+    if(!window.google?.accounts?.oauth2) return rej(new Error('Ainda carregando o login do Google. Tente de novo em alguns segundos.'));
     google.accounts.oauth2.initTokenClient({
       client_id:id,scope:'https://www.googleapis.com/auth/youtube',
       callback:r=>{
-        if(r.error) return rej(new Error('Google: '+(r.error_description||r.error)));
+        if(r.error) return rej(new Error('Não foi possível entrar com o Google ('+(r.error_description||r.error)+').'));
         yt={token:r.access_token,exp:Date.now()+(r.expires_in-60)*1000};
         try{sessionStorage.setItem('s2c_yt',JSON.stringify(yt))}catch{}
         renderChips();res();
       },
-      error_callback:e=>rej(new Error('Login do Google cancelado ('+(e.type||'erro')+').'))
+      error_callback:e=>rej(new Error('Login do Google cancelado.'))
     }).requestAccessToken();
   });
 }
 async function ytFetch(path,opts={}){
-  if(!ytOk()){const e=new Error('AUTH');throw e}
+  if(!ytOk()) throw new Error('AUTH');
   const r=await fetch('https://www.googleapis.com/youtube/v3/'+path,{...opts,headers:{Authorization:'Bearer '+yt.token,'Content-Type':'application/json'}});
   const j=await r.json().catch(()=>({}));
   if(r.status===401){yt={token:null,exp:0};sessionStorage.removeItem('s2c_yt');renderChips();throw new Error('AUTH')}
@@ -368,53 +312,42 @@ function applyCands(r,vids){
   r.status=r.cands.length?'done':'none';
   r.include=r.cands.length>0;
 }
-
-/* ============ UI: chips, tabs, settings ============ */
 function renderChips(){
-  const ytOn=!!ytOk(),yb=$('#btnYtLogin');
-  yb.textContent=ytOn?'✓ YouTube conectado':'Entrar com Google / YouTube';yb.classList.toggle('done',ytOn);
-  $('#btnSearch').textContent=ytOn?'Buscar clipes no YouTube →':'Conectar YouTube e buscar clipes →';
+  $('#btnSearch').textContent=ytOk()?'Buscar os clipes →':'Continuar com Google e buscar os clipes →';
+  $('#readyHint').hidden=ytOk();
 }
-function openSettings(){
-  const c=store.get('s2c_cfg',{});
-  $('#cfgG').value=c.googleClientId||DEFAULTS.googleClientId||'';
-  $('#cfgW').value=c.workerUrl||DEFAULTS.workerUrl||'';
-  $('#cfgOrigin').textContent=location.origin;
-  $('#dlg').showModal();
-}
+
+/* ============ passo 1: origem das músicas ============ */
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
   ['tSp','tCsv'].forEach(id=>$('#'+id).hidden=id!==b.dataset.tab);
 });
-$('#btnCfg').onclick=openSettings;
-$('#cfgCancel').onclick=()=>$('#dlg').close();
-$('#cfgSave').onclick=()=>{store.set('s2c_cfg',{googleClientId:$('#cfgG').value.trim(),workerUrl:$('#cfgW').value.trim()});$('#dlg').close();toast('Configurações salvas.')};
-$('#cfgCopy').onclick=()=>{const l=`const DEFAULTS = { googleClientId: '${$('#cfgG').value.trim()}', workerUrl: '${$('#cfgW').value.trim()}' };`;navigator.clipboard.writeText(l).then(()=>toast('Copiado! Cole no lugar da linha “const DEFAULTS” no topo do script.',7000))};
-$('#btnYtLogin').onclick=()=>ytOk()?toast('YouTube já conectado.'):ytLogin().catch(e=>toast(e.message));
-
-/* ============ passo 1 → origem ============ */
 function showReady(){
   const n=src.tracks.length;
   $('#ready').hidden=false;
-  $('#readyTxt').innerHTML=`<b>${esc(src.name)}</b> · ${n} músicas`;
-  $('#readyCost').textContent=`Custo estimado de cota do YouTube: ~${(n*101).toLocaleString('pt-BR')} para buscar + ${(50+50*n).toLocaleString('pt-BR')} para criar (limite grátis: 10.000/dia, somando todos os usuários do app). Se passar do dia, o app guarda o progresso e você continua amanhã.`+(src.capped?' Atenção: pelo link o Spotify costuma mostrar só as 100 primeiras músicas. Se faltar alguma, use a aba CSV.':'');
+  $('#readyTxt').innerHTML=`<b>${esc(src.name)}</b> · ${n} música${n===1?'':'s'}`;
+  const notes=[];
+  if(n>60) notes.push('Playlists grandes podem levar mais de um dia por causa do limite diário do YouTube. O app guarda o progresso e você continua de onde parou.');
+  if(src.capped) notes.push('O Spotify costuma mostrar só as 100 primeiras músicas pelo link. Se faltar alguma, use a aba “Arquivo CSV / lista”.');
+  $('#readyNote').textContent=notes.join(' ');
+  renderChips();
   $('#ready').scrollIntoView({behavior:'smooth'});
 }
 let linkTimer;
 async function loadLink(){
   if(busy) return;
   const id=parseSpotifyId($('#spLink').value);
-  if(!id) return toast('Não reconheci esse link. Ele deve parecer com open.spotify.com/playlist/…');
-  const w=(cfg().workerUrl||'').replace(/\/+$/,'');
-  if(!w){openSettings();return toast('App ainda não configurado: o dono precisa colocar o endereço do Worker (veja ⚙ Configurar).',8000)}
+  if(!id) return toast('Não reconheci esse link. Ele deve ser parecido com open.spotify.com/playlist/…');
+  const w=cfg().workerUrl;
+  if(!w) return toast(NOT_READY_MSG);
   busy=true;$('#btnLoadLink').disabled=true;$('#btnLoadLink').textContent='Lendo…';
   try{
     let r,j;
     try{ r=await fetch(w+'/?playlist='+id); j=await r.json(); }
-    catch{ throw new Error('Não consegui falar com o servidor do app. Confira o endereço do Worker nas configurações.') }
+    catch{ throw new Error('Não consegui ler a playlist agora. Tente de novo em instantes ou use a aba “Arquivo CSV / lista”.') }
     if(!r.ok||!j.tracks){
-      const M={nao_encontrada:'Playlist não encontrada. Confira o link e se ela está pública.',sem_faixas:'Não consegui ler as músicas. Confira se a playlist está pública. Se estiver, o Spotify pode ter mudado a página: use a aba CSV.',link_invalido:'Link inválido.',origem_nao_permitida:'Este site não está autorizado no Worker (ALLOWED_ORIGIN).'};
-      throw new Error(M[j&&j.error]||'Não consegui ler a playlist ('+((j&&j.error)||r.status)+'). Tente a aba CSV.');
+      const M={nao_encontrada:'Playlist não encontrada. Confira o link e se ela está pública.',sem_faixas:'Não consegui ler as músicas. Confira se a playlist está pública ou use a aba “Arquivo CSV / lista”.',link_invalido:'Link inválido.'};
+      throw new Error(M[j&&j.error]||'Não consegui ler essa playlist. Tente a aba “Arquivo CSV / lista”.');
     }
     src={name:j.name||'Minha playlist',tracks:j.tracks,capped:j.tracks.length>=100};
     showReady();
@@ -452,10 +385,10 @@ async function runSearch(){
   if(busy) return;
   const todo=state.rows.filter(r=>r.status==='pending');
   if(!todo.length) return;
-  const need=todo.length*101;
-  if(quotaUsed()+need>QUOTA_LIMIT && !confirm(`Buscar ${todo.length} músicas custa ~${need} unidades, mas pela sua estimativa só restam ~${Math.max(0,QUOTA_LIMIT-quotaUsed())} hoje. Vou buscar até a cota acabar e você continua amanhã. Seguir?`)) return;
+  const left=Math.max(0,QUOTA_LIMIT-quotaUsed());
+  if(todo.length*101>left && !confirm(`Esta playlist tem ${todo.length} músicas e, pelo limite diário do YouTube, dá para buscar cerca de ${Math.floor(left/101)} hoje. Vamos buscar até onde der e você continua amanhã, de onde parou. Seguir?`)) return;
   busy=true;$('#btnContinueSearch').hidden=true;
-  const bar=$('#searchBar');bar.hidden=false;
+  const bar=$('#searchBar');bar.hidden=false;bar.firstElementChild.style.width='0';
   let i=0,done=0,stop=null;
   const total=todo.length;
   const worker=async()=>{
@@ -473,19 +406,19 @@ async function runSearch(){
   };
   await Promise.all([worker(),worker(),worker()]);
   saveState();busy=false;bar.hidden=true;renderSummary();
-  if(stop==='quota') toast('A cota diária do YouTube acabou. O progresso foi salvo: volte amanhã e clique em “Continuar busca”.',9000);
-  if(stop==='auth') toast('O login do YouTube expirou. Clique em “Continuar busca” para reconectar.',9000);
+  if(stop==='quota') toast('Atingimos o limite diário do YouTube. Seu progresso foi salvo: volte amanhã e clique em “Continuar busca”.',10000);
+  if(stop==='auth') toast('Sua sessão do Google expirou. Clique em “Continuar busca” para entrar de novo.',9000);
 }
 
 /* ============ revisão ============ */
 function rowHTML(r,i){
   const c=r.cands[r.sel],conf=confOf(r);
-  const B={high:['Alta','ok'],medium:['Média','warn'],low:['Baixa','bad'],none:['Sem resultado','bad'],manual:['Manual','ok'],pending:['Aguardando','mute']}[conf];
+  const B={high:['Certeza alta','ok'],medium:['Conferir','warn'],low:['Incerto','bad'],none:['Sem resultado','bad'],manual:['Escolhido por você','ok'],pending:['Buscando…','mute']}[conf];
   const img=c?`<a href="https://www.youtube.com/watch?v=${c.id}" target="_blank" rel="noopener" title="Abrir vídeo"><img src="https://i.ytimg.com/vi/${c.id}/mqdefault.jpg" alt="" loading="lazy"></a>`:`<div class="noimg">${conf==='pending'?'…':'sem vídeo'}</div>`;
-  const opts=r.cands.map((v,k)=>`<option value="${k}" ${k===r.sel?'selected':''}>${esc(v.title)} — ${esc(v.channel)} · ${mmss(v.sec)}${v.manual?' · manual':' · '+v.score}</option>`).join('');
+  const opts=r.cands.map((v,k)=>`<option value="${k}" ${k===r.sel?'selected':''}>${esc(v.title)} — ${esc(v.channel)} · ${mmss(v.sec)}</option>`).join('');
   const vd=c?`${esc(c.title)}<br><small>${esc(c.channel)} · ${mmss(c.sec)}${c.views?' · '+c.views.toLocaleString('pt-BR')+' views':''}</small>`:(r.err?esc(r.err):'');
   return `<div class="row ${r.include?'':'off'} ${conf==='high'||conf==='manual'?'hi':''}" data-row="${i}">
-    <input type="checkbox" data-act="inc" data-i="${i}" ${r.include?'checked':''} ${c?'':'disabled'} aria-label="Incluir">
+    <input type="checkbox" data-act="inc" data-i="${i}" ${r.include?'checked':''} ${c?'':'disabled'} aria-label="Incluir na playlist">
     ${img}
     <div style="min-width:0"><div class="sp">${esc(r.tr.title)} <small>— ${esc((r.tr.artists||[]).join(', '))} · ${mmss(r.tr.durationSec)}</small> ${r.inserted?'<span class="badge ok">✓ adicionada</span>':''}</div>
       <div class="vd">${vd}</div>
@@ -500,13 +433,13 @@ function renderSummary(){
   const cnt={high:0,medium:0,low:0,none:0,manual:0,pending:0};
   state.rows.forEach(r=>cnt[confOf(r)]++);
   const inc=state.rows.filter(r=>r.include&&r.cands[r.sel]).length;
-  $('#summary').innerHTML=`${state.rows.length} músicas · <span style="color:var(--ok)">${cnt.high+cnt.manual} alta confiança</span> · <span style="color:var(--warn)">${cnt.medium} média</span> · <span style="color:var(--bad)">${cnt.low} baixa</span> · ${cnt.none} sem resultado${cnt.pending?` · ${cnt.pending} aguardando busca`:''}`;
+  $('#summary').innerHTML=`${state.rows.length} músicas · <span style="color:var(--ok)">${cnt.high+cnt.manual} com certeza alta</span> · <span style="color:var(--warn)">${cnt.medium} para conferir</span> · <span style="color:var(--bad)">${cnt.low+cnt.none} incertas ou sem resultado</span>${cnt.pending?` · ${cnt.pending} aguardando busca`:''}`;
   $('#btnContinueSearch').hidden=!(cnt.pending&&!busy);
-  $('#createInfo').textContent=`${inc} vídeos · ~${(50+50*inc).toLocaleString('pt-BR')} unidades de cota`;
+  $('#createInfo').textContent=`${inc} vídeo${inc===1?'':'s'} serão adicionados`;
 }
 function showReview(){
   show('s2');
-  $('#revTitle').textContent='Revisar: '+state.name;
+  $('#revTitle').textContent='Confira os clipes: '+state.name;
   $('#rows').innerHTML=state.rows.map(rowHTML).join('');
   $('#ytTitle').value=state.ytTitle;$('#privacy').value=state.privacy;
   renderSummary();
@@ -523,14 +456,14 @@ $('#rows').addEventListener('change',e=>{
 $('#rows').addEventListener('click',async e=>{
   const b=e.target.closest('[data-act="link"]'); if(!b) return;
   const r=state.rows[+b.dataset.i];
-  const id=parseYtId(prompt('Cole o link (ou ID) do vídeo do YouTube:')||''); if(!id) return;
+  const id=parseYtId(prompt('Cole o link (ou o código) do vídeo do YouTube:')||''); if(!id) return;
   try{
     if(!ytOk()) await ytLogin();
     const [v]=await ytVideos([id]); if(!v) return toast('Vídeo não encontrado.');
     r.cands=r.cands.filter(c=>c.id!==id);
     r.cands.unshift({...v,score:0,manual:true});r.sel=0;r.include=true;r.status='done';
     saveState();updateRow(r);renderSummary();
-  }catch(err){toast(err.message==='AUTH'?'Reconecte o YouTube e tente de novo.':err.message)}
+  }catch(err){toast(err.message==='AUTH'?'Entre de novo com o Google e tente outra vez.':err.message)}
 });
 
 /* ============ criação ============ */
@@ -541,7 +474,7 @@ $('#btnCreate').onclick=async()=>{
   try{ if(!ytOk()) await ytLogin(); }catch(e){return toast(e.message)}
   const title=($('#ytTitle').value||'').trim()||state.name;
   busy=true;$('#btnCreate').disabled=true;
-  const bar=$('#createBar');bar.hidden=false;
+  const bar=$('#createBar');bar.hidden=false;bar.firstElementChild.style.width='0';
   let stop=null,n=0;
   const todo=items.filter(r=>!r.inserted);
   try{
@@ -567,8 +500,8 @@ $('#btnCreate').onclick=async()=>{
   }
   saveState();busy=false;$('#btnCreate').disabled=false;bar.hidden=true;renderSummary();
   const left=items.filter(r=>!r.inserted&&!r.err).length;
-  if(stop==='quota') return toast(`A cota do YouTube acabou com ${left} vídeos ainda por adicionar. Volte amanhã e clique em “Criar playlist” de novo: ele continua de onde parou.`,10000);
-  if(stop==='auth') return toast('O login do YouTube expirou. Clique em “Criar playlist” para reconectar e continuar.',8000);
+  if(stop==='quota') return toast(`Atingimos o limite diário do YouTube, faltam ${left} vídeos. Volte amanhã e clique em “Criar playlist” de novo: continuamos de onde parou.`,10000);
+  if(stop==='auth') return toast('Sua sessão do Google expirou. Clique em “Criar playlist” para entrar de novo e continuar.',8000);
   if(stop) return;
   showDone(items);
 };
@@ -581,7 +514,7 @@ function showDone(items){
   $('#failed').innerHTML=fail.length?`<b>Não consegui adicionar ${fail.length}:</b><ul>${fail.map(r=>`<li>${esc(r.tr.title)} — ${esc(r.err||'')}</li>`).join('')}</ul>`:'';
   store.del('s2c_state');show('s3');
 }
-$('#btnNew').onclick=()=>{state=null;src=null;$('#ready').hidden=true;store.del('s2c_state');show('s1')};
+$('#btnNew').onclick=()=>{state=null;src=null;$('#ready').hidden=true;$('#spLink').value='';store.del('s2c_state');show('s1')};
 
 /* ============ retomar ============ */
 function checkResume(){
@@ -595,13 +528,8 @@ function checkResume(){
 }
 
 /* ============ init ============ */
-(async function init(){
-  renderQuota();renderChips();
-  if(location.protocol==='file:') toast('Abra o app por um endereço http(s) (GitHub Pages, por exemplo). O login não funciona com arquivo local.',9000);
-  renderChips();checkResume();
-  const missing=!cfg().googleClientId||!cfg().workerUrl;
-  if(missing||location.hash==='#setup'){ $('#btnCfg').hidden=false; if(missing) $('#btnCfg').textContent='⚙ Configurar (só o dono)'; }
-})();
+renderChips();checkResume();
+if(!cfg().googleClientId) $('#notReady').hidden=false;
 </script>
 </body>
 </html>
