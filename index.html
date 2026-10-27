@@ -248,39 +248,43 @@ let toastT;
 function toast(msg,ms=5000){const t=$('#toast');t.textContent=msg;t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',ms)}
 
 /* ============ limite diário do YouTube ============ */
-const QUOTA_LIMIT=10000, COST_PER_SONG=151;   // ~101 para buscar + 50 para adicionar
+// Custos observados no painel do Google (podem mudar): busca ~50, consulta de detalhes 1, adicionar à playlist 50.
+const QUOTA_LIMIT=10000, SEARCH_LIMIT=100, COST={search:50,video:1,insert:50,create:50};
+const COST_PER_SONG=COST.search+COST.video+COST.insert;
 const pacificDay=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Los_Angeles'}).format(new Date());
-function localUsed(){const q=store.get('s2c_quota',{});return q.day===pacificDay()?q.used:0}
-let qShared=null, qPending=0, qTimer=null;   // contador compartilhado (Worker + KV)
+function localUsage(){const q=store.get('s2c_quota',{});return q.day===pacificDay()?{used:q.used||0,searches:q.searches||0}:{used:0,searches:0}}
+let qShared=null, qPendingU=0, qPendingS=0, qTimer=null;   // contador compartilhado (Worker + KV)
 function resetInfo(now=new Date()){
   const ms=msUntilPacificMidnight(now),at=new Date(now.getTime()+ms);
   return {txt:at.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),day:at.toDateString()===now.toDateString()?'hoje':'amanhã',ms};
 }
 function quotaState(){
-  const shared=!!(qShared&&qShared.enabled),used=shared?qShared.used:localUsed();
-  return {shared,used,left:Math.max(0,QUOTA_LIMIT-used)};
+  const shared=!!(qShared&&qShared.enabled),u=shared?{used:qShared.used,searches:qShared.searches||0}:localUsage();
+  const left=Math.max(0,QUOTA_LIMIT-u.used),searchesLeft=Math.max(0,SEARCH_LIMIT-u.searches);
+  const songs=Math.max(0,Math.min(Math.floor((left-COST.create)/COST_PER_SONG),searchesLeft));
+  return {shared,used:u.used,searches:u.searches,left,searchesLeft,songs};
 }
-function addQuota(n){
-  store.set('s2c_quota',{day:pacificDay(),used:localUsed()+n});
-  if(qShared&&qShared.enabled){ qShared.used+=n; qPending+=n; if(!qTimer) qTimer=setTimeout(flushQuota,5000); }
+function addQuota(n,searches=0){
+  const l=localUsage();store.set('s2c_quota',{day:pacificDay(),used:l.used+n,searches:l.searches+searches});
+  if(qShared&&qShared.enabled){ qShared.used+=n; qShared.searches=(qShared.searches||0)+searches; qPendingU+=n; qPendingS+=searches; if(!qTimer) qTimer=setTimeout(flushQuota,5000); }
   renderQuota();
 }
 async function flushQuota(){
   clearTimeout(qTimer);qTimer=null;
-  const w=cfg().workerUrl; if(!w||!qPending) return;
-  while(qPending>0){
-    const n=Math.min(qPending,2000);
+  const w=cfg().workerUrl; if(!w||!qPendingU) return;
+  while(qPendingU>0){
+    const n=Math.min(qPendingU,2000),m=Math.min(qPendingS,200);
     try{
-      const r=await fetch(w+'/quota',{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({units:n})});
+      const r=await fetch(w+'/quota',{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({units:n,searches:m})});
       const j=await r.json(); if(j&&j.enabled) qShared=j;
-      qPending-=n;
+      qPendingU-=n;qPendingS-=m;
     }catch{ break }
   }
   renderQuota();
 }
 async function refreshQuota(){
   const w=cfg().workerUrl;
-  if(w&&!qPending){
+  if(w&&!qPendingU){
     try{ const j=await (await fetch(w+'/quota')).json(); qShared=(j&&j.enabled)?j:{enabled:false}; }catch{}
   }
   renderQuota();
@@ -288,10 +292,10 @@ async function refreshQuota(){
 function renderQuota(){
   const el=$('#quota'); if(!el) return;
   el.hidden=!cfg().googleClientId;
-  const {shared,used,left}=quotaState(),rs=resetInfo(),pct=Math.min(100,used/QUOTA_LIMIT*100),songs=Math.floor(left/COST_PER_SONG);
+  const q=quotaState(),rs=resetInfo(),pct=Math.min(100,Math.max(q.used/QUOTA_LIMIT,q.searches/SEARCH_LIMIT)*100);
   const bar=$('#qBar');bar.style.width=pct+'%';bar.style.background=pct>=90?'var(--bad)':pct>=70?'var(--warn)':'';
-  $('#qTxt').textContent=left<=0?'Limite de hoje atingido':`≈ ${songs} música${songs===1?'':'s'} restantes hoje`;
-  $('#qSub').textContent=`${used.toLocaleString('pt-BR')} de ${QUOTA_LIMIT.toLocaleString('pt-BR')} unidades usadas · renova ${rs.day} às ${rs.txt} · ${shared?'contador compartilhado entre todos os usuários':'estimativa deste navegador'}`;
+  $('#qTxt').textContent=q.songs<=0?'Limite de hoje atingido':`≈ ${q.songs} música${q.songs===1?'':'s'} restantes hoje`;
+  $('#qSub').textContent=`${q.searches} de ${SEARCH_LIMIT} buscas · ${q.used.toLocaleString('pt-BR')} de ${QUOTA_LIMIT.toLocaleString('pt-BR')} unidades · renova ${rs.day} às ${rs.txt} · ${q.shared?'contador compartilhado entre todos os usuários':'estimativa deste navegador'}`;
   if(typeof src!=='undefined'&&src&&!$('#ready').hidden) renderReadyNote();
 }
 
@@ -327,12 +331,12 @@ async function ytFetch(path,opts={}){
 const isQuota=e=>e&&(e.reason==='quotaExceeded'||e.reason==='dailyLimitExceeded'||e.reason==='rateLimitExceeded');
 async function ytSearch(q,cat){
   const j=await ytFetch('search?part=snippet&type=video&maxResults=6&q='+encodeURIComponent(q)+(cat?'&videoCategoryId=10':''));
-  addQuota(100);
+  addQuota(COST.search,1);
   return j.items.map(i=>i.id.videoId).filter(Boolean);
 }
 async function ytVideos(ids){
   const j=await ytFetch('videos?part=snippet,contentDetails,statistics&id='+ids.join(','));
-  addQuota(1);
+  addQuota(COST.video);
   return j.items.map(v=>({id:v.id,title:v.snippet.title,channel:v.snippet.channelTitle,sec:isoSec(v.contentDetails.duration),views:+(v.statistics?.viewCount||0)}));
 }
 async function findVideos(tr){
@@ -379,11 +383,10 @@ document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
 });
 function renderReadyNote(){
   if(!src) return;
-  const n=src.tracks.length,{left}=quotaState(),rs=resetInfo(),need=n*COST_PER_SONG+50,notes=[];
-  if(need>left){
-    const can=Math.max(0,Math.floor((left-50)/COST_PER_SONG));
-    notes.push(can>0
-      ?`Hoje ainda dá para converter cerca de ${can} das ${n} músicas, por causa do limite diário do YouTube. O resto continua ${rs.day} às ${rs.txt}, de onde você parou.`
+  const n=src.tracks.length,{songs}=quotaState(),rs=resetInfo(),notes=[];
+  if(n>songs){
+    notes.push(songs>0
+      ?`Hoje ainda dá para converter cerca de ${songs} das ${n} músicas, por causa do limite diário do YouTube. O resto continua ${rs.day} às ${rs.txt}, de onde você parou.`
       :`O limite diário do YouTube já foi atingido hoje. A conversão só continua ${rs.day} às ${rs.txt}.`);
   }
   if(src.capped) notes.push('O Spotify costuma mostrar só as 100 primeiras músicas pelo link. Se faltar alguma, use a aba “Arquivo CSV / lista”.');
@@ -448,8 +451,8 @@ async function runSearch(){
   if(busy) return;
   const todo=state.rows.filter(r=>r.status==='pending');
   if(!todo.length) return;
-  const left=quotaState().left;
-  if(todo.length*101>left && !confirm(`Esta playlist tem ${todo.length} músicas e, pelo limite diário do YouTube, dá para buscar cerca de ${Math.floor(left/101)} hoje. Vamos buscar até onde der e você continua amanhã, de onde parou. Seguir?`)) return;
+  const songsLeft=quotaState().songs;
+  if(todo.length>songsLeft && !confirm(`Esta playlist tem ${todo.length} músicas e, pelo limite diário do YouTube, dá para buscar cerca de ${songsLeft} hoje. Vamos buscar até onde der e você continua amanhã, de onde parou. Seguir?`)) return;
   busy=true;$('#btnContinueSearch').hidden=true;
   const bar=$('#searchBar');bar.hidden=false;bar.firstElementChild.style.width='0';
   let i=0,done=0,stop=null;
@@ -543,12 +546,12 @@ $('#btnCreate').onclick=async()=>{
   try{
     if(!state.playlistId){
       const j=await ytFetch('playlists?part=snippet,status',{method:'POST',body:JSON.stringify({snippet:{title,description:`Criada com Spot2Clip a partir de "${state.name}" do Spotify.`},status:{privacyStatus:state.privacy}})});
-      addQuota(50);state.playlistId=j.id;state.ytTitle=title;saveState();
+      addQuota(COST.create);state.playlistId=j.id;state.ytTitle=title;saveState();
     }
     for(const r of todo){
       try{
         await ytFetch('playlistItems?part=snippet',{method:'POST',body:JSON.stringify({snippet:{playlistId:state.playlistId,resourceId:{kind:'youtube#video',videoId:r.cands[r.sel].id}}})});
-        addQuota(50);r.inserted=true;r.err=null;
+        addQuota(COST.insert);r.inserted=true;r.err=null;
       }catch(e){
         if(isQuota(e)||e.message==='AUTH'){stop=isQuota(e)?'quota':'auth';break}
         r.err=e.message;

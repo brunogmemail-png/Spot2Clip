@@ -67,6 +67,12 @@ a{color:var(--acc2)}
     <small id="qSub"></small>
     <p style="margin:8px 0 0"><small id="qMode"></small></p>
     <p style="margin:6px 0 0"><small>Número oficial do Google (com alguns minutos de atraso): <a href="https://console.cloud.google.com/apis/api/youtube.googleapis.com/quotas" target="_blank" rel="noopener">abrir no Google Cloud</a>.</small></p>
+    <details style="margin-top:10px"><summary>Sincronizar com o número do Google</summary>
+      <p class="mute" style="margin:6px 0">Abra a página do Google acima, aba <b>Cotas e limites do sistema</b>, e copie o <b>Uso atual</b> de duas linhas: <b>Queries per day</b> e <b>Search Queries per day</b>.</p>
+      <div class="flex"><input type="text" id="syU" class="grow" inputmode="numeric" placeholder="Queries per day (ex.: 2804)"><input type="text" id="syS" class="grow" inputmode="numeric" placeholder="Search Queries per day (ex.: 54)"></div>
+      <div class="flex" style="margin-top:8px"><input type="password" id="syK" class="grow" placeholder="Chave ADMIN_KEY do Worker" autocomplete="off"><button id="btnSync">Sincronizar</button></div>
+      <small id="syMsg">A chave é a variável secreta <code>ADMIN_KEY</code> criada no Cloudflare (guia C, último passo).</small>
+    </details>
   </div>
 
   <div class="card">
@@ -107,6 +113,7 @@ a{color:var(--acc2)}
         <li>Copie o endereço <code>….workers.dev</code> para o campo acima.</li>
         <li>Recomendado: <b>Settings → Variables and Secrets</b> → crie <code>ALLOWED_ORIGIN</code> com a origem acima, para só o seu site usar o Worker.</li>
         <li><b>Contador compartilhado do limite do YouTube</b> (recomendado): em <b>Storage &amp; databases → KV → Create</b>, crie um namespace chamado <code>spot2clip-quota</code>. Depois, no Worker, abra <b>Settings → Bindings → Add → KV namespace</b>, use o nome de variável <code>QUOTA</code>, escolha o namespace criado e faça <b>Deploy</b>. Sem isso, o site usa só uma estimativa de cada navegador.</li>
+        <li><b>Chave do administrador</b> (para o botão “Sincronizar”): em <b>Settings → Variables and secrets → Add variable</b>, use o nome <code>ADMIN_KEY</code>, um valor longo e secreto (marque <b>Secret</b>) e clique em <b>Add variable and deploy</b>. Anote esse valor: é o que você digita no campo “Chave ADMIN_KEY”.</li>
       </ol></details>
   </div>
 </div>
@@ -175,24 +182,41 @@ function msUntilPacificMidnight(now=new Date()){
   return (86400-(h*3600+g('minute')*60+g('second')))*1000;
 }
 function resetInfo(now=new Date()){const at=new Date(now.getTime()+msUntilPacificMidnight(now));return {txt:at.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),day:at.toDateString()===now.toDateString()?'hoje':'amanhã'}}
+const SL=100,SONG_COST=101,CREATE=50;
 async function refreshQ(){
   const w=$('#cfgW').value.trim().replace(/\/+$/,''),rs=resetInfo();
   const set=(t,sub,mode,pct,cls)=>{$('#qTxt').textContent=t;$('#qSub').textContent=sub;$('#qMode').textContent=mode;const b=$('#qBar');b.style.width=pct+'%';b.style.background=cls}
   if(!w) return set('–','','Preencha o endereço do Worker para ver o contador.',0,'');
   try{
     const j=await (await fetch(w+'/quota')).json();
-    if(!j.enabled) return set('Contador compartilhado desligado','Renova '+rs.day+' às '+rs.txt,'O Worker ainda não tem o KV “QUOTA” ligado (guia C, último passo). Enquanto isso, cada navegador usa uma estimativa própria.',0,'');
-    const left=Math.max(0,QL-j.used),pct=Math.min(100,j.used/QL*100),songs=Math.floor(left/CPS);
-    set(left<=0?'Limite de hoje atingido':`≈ ${songs} música${songs===1?'':'s'} restantes hoje`,
-        `${j.used.toLocaleString('pt-BR')} de ${QL.toLocaleString('pt-BR')} unidades usadas · renova ${rs.day} às ${rs.txt}`,
-        '✓ Contador compartilhado ativo (soma o uso de todos os usuários do site). Conta só o que passou pelo app a partir de quando o KV foi ligado; o número oficial pode ser um pouco maior.',
+    if(!j.enabled) return set('Contador compartilhado desligado','Renova '+rs.day+' às '+rs.txt,'O Worker ainda não tem o KV “QUOTA” ligado (guia C). Enquanto isso, cada navegador usa uma estimativa própria.',0,'');
+    const s=j.searches||0,left=Math.max(0,QL-j.used),songs=Math.max(0,Math.min(Math.floor((left-CREATE)/SONG_COST),SL-s));
+    const pct=Math.min(100,Math.max(j.used/QL,s/SL)*100);
+    set(songs<=0?'Limite de hoje atingido':`≈ ${songs} música${songs===1?'':'s'} restantes hoje`,
+        `${s} de ${SL} buscas · ${j.used.toLocaleString('pt-BR')} de ${QL.toLocaleString('pt-BR')} unidades · renova ${rs.day} às ${rs.txt}`,
+        '✓ Contador compartilhado ativo (soma o uso de todos os usuários do site). Conta o que passa pelo app; use “Sincronizar” para alinhar com o número oficial do Google.',
         pct,pct>=90?'var(--bad)':pct>=70?'var(--warn)':'');
   }catch(e){set('–','','Não consegui falar com o Worker: '+e.message,0,'')}
+}
+async function syncQ(){
+  const w=$('#cfgW').value.trim().replace(/\/+$/,''),m=$('#syMsg'),key=$('#syK').value;
+  const used=Number($('#syU').value.replace(/\./g,'')),searches=Number($('#syS').value.replace(/\./g,''));
+  if(!w){m.textContent='Preencha o endereço do Worker.';m.className='bad';return}
+  if(!Number.isFinite(used)||!Number.isFinite(searches)||$('#syU').value===''||$('#syS').value===''){m.textContent='Digite os dois números.';m.className='bad';return}
+  if(!key){m.textContent='Digite a chave ADMIN_KEY.';m.className='bad';return}
+  m.textContent='Sincronizando…';m.className='mute';
+  try{
+    const r=await fetch(w+'/quota/set',{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({key,used,searches})});
+    const j=await r.json().catch(()=>({}));
+    if(r.ok&&j.enabled){m.textContent='✓ Sincronizado.';m.className='ok';refreshQ()}
+    else m.textContent={chave_invalida:'Chave incorreta.',admin_key_nao_configurada:'A variável ADMIN_KEY ainda não existe no Worker.',valores_invalidos:'Valores inválidos.'}[j.error]||('Falhou ('+(j.error||r.status)+').'),m.className='bad';
+  }catch(e){m.textContent='Não consegui falar com o Worker: '+e.message;m.className='bad'}
 }
 let qT;
 function init(){
   qT=setInterval(refreshQ,20000);
   $('#btnQ').onclick=refreshQ;
+  $('#btnSync').onclick=syncQ;
   let d;$('#cfgW').addEventListener('input',()=>{clearTimeout(d);d=setTimeout(refreshQ,600)});
   setTimeout(refreshQ,0);
   const l=local();
