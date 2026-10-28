@@ -53,6 +53,8 @@ a{color:var(--acc2)}
     <small id="gMsg"></small>
     <label for="cfgW">Endereço do Worker (Cloudflare)</label>
     <input type="text" id="cfgW" autocomplete="off" placeholder="https://spot2clip-proxy.SEUNOME.workers.dev">
+    <label for="cfgE">E-mail de contato (aparece na Política de Privacidade)</label>
+    <input type="text" id="cfgE" autocomplete="off" placeholder="voce@exemplo.com">
     <div class="flex" style="margin-top:8px"><button id="btnPing">Testar o Worker</button><small id="wMsg"></small></div>
 
     <h3>Testar a leitura de uma playlist pública</h3>
@@ -104,6 +106,13 @@ a{color:var(--acc2)}
         <li><b>APIs e serviços → Biblioteca</b> → <b>YouTube Data API v3</b> → <b>Ativar</b>.</li>
         <li><b>Tela de permissão OAuth</b> (ou “Google Auth Platform”): nome do app, seu e-mail, público <b>Externo</b>. Em <b>Usuários de teste</b>, adicione o e-mail de quem for usar (até 100).</li>
         <li><b>Credenciais → Criar credenciais → ID do cliente OAuth → Aplicativo da Web</b>. Em <b>Origens JavaScript autorizadas</b>, cole a origem acima. Crie e copie o ID do cliente.</li>
+      </ol></details>
+    <details><summary>B2 · Liberar o app do Google para qualquer pessoa (sem lista de e-mails)</summary>
+      <ol>
+        <li>No Google Cloud, abra <b>Google Auth Platform → Branding</b> e preencha: <b>Nome do app</b> = <code>Spot2Clip</code>; <b>E-mail de suporte</b>; <b>Página inicial</b> = <code id="gHome"></code>; <b>Política de Privacidade</b> = <code id="gPriv"></code>.</li>
+        <li>Em <b>Domínios autorizados</b>, adicione <code>github.io</code> (se o Google reclamar do domínio, veja a observação no fim deste item).</li>
+        <li>Salve. Depois, em <b>Público-alvo → Status de publicação</b>, clique em <b>Publicar app</b> e confirme.</li>
+        <li>Quem entrar verá o aviso “O Google não verificou este app”: <b>Avançado → Acessar Spot2Clip (não seguro)</b>. O limite sem verificação é de 100 usuários novos no total.</li>
       </ol></details>
     <details><summary>C · Cloudflare Worker (lê a playlist e conta o limite do YouTube)</summary>
       <ol>
@@ -163,6 +172,7 @@ function genConfig(){
 window.SPOT2CLIP = {
   googleClientId: ${JSON.stringify(g)},
   workerUrl: ${JSON.stringify(w)},
+  contactEmail: ${JSON.stringify($('#cfgE').value.trim())},
   adminSalt: ${JSON.stringify(session.salt)},
   adminHash: ${JSON.stringify(session.hash)}
 };
@@ -222,8 +232,12 @@ function init(){
   const l=local();
   $('#cfgG').value=l.googleClientId||C.googleClientId||'';
   $('#cfgW').value=l.workerUrl||C.workerUrl||'';
+  $('#cfgE').value=C.contactEmail||'';
   $('#origin').textContent=location.origin;
-  ['cfgG','cfgW'].forEach(id=>$('#'+id).addEventListener('input',refresh));
+  const base=location.origin+location.pathname.replace(/[^/]*$/,'');
+  if($('#gHome'))$('#gHome').textContent=base;
+  if($('#gPriv'))$('#gPriv').textContent=base+'privacy.html';
+  ['cfgG','cfgW','cfgE'].forEach(id=>$('#'+id).addEventListener('input',refresh));
   refresh();
 }
 $('#btnCopy').onclick=()=>navigator.clipboard.writeText($('#out').value).then(()=>{$('#btnCopy').textContent='Copiado ✓';setTimeout(()=>$('#btnCopy').textContent='Copiar config.js',2000)});

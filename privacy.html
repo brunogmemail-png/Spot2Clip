@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spot2Clip · Política de Privacidade</title>
+<script src="config.js"></script>
+<style>
+:root{--bg:#0e1013;--card:#171a20;--line:#272c36;--text:#eef1f5;--mute:#8c95a3;--acc:#ff4d6d;--acc2:#7c5cff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:22px 16px 70px}
+.logo{display:block;text-align:center;font-weight:800;font-size:20px;letter-spacing:-.5px;text-decoration:none;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 24px}
+h1{font-size:26px;margin:0 0 4px;letter-spacing:-.5px}
+h2{font-size:18px;margin:26px 0 6px}
+p,li{color:#d5dae2}
+.mute{color:var(--mute);font-size:14px}
+a{color:#9d86ff}
+ul{padding-left:20px}
+hr{border:0;border-top:1px solid var(--line);margin:30px 0 18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="logo" href="./">Spot2Clip</a>
+<div class="card">
+<h1>Política de Privacidade</h1>
+<p class="mute">Última atualização: 27 de outubro de 2026</p>
+
+<p>O <b>Spot2Clip</b> é uma ferramenta gratuita que transforma uma playlist do Spotify em uma playlist de videoclipes no YouTube. Esta página explica, de forma direta, quais dados o app usa e o que ele faz (e não faz) com eles.</p>
+
+<h2>O que o app acessa na sua conta Google</h2>
+<p>Quando você clica em “Continuar com Google”, o app pede permissão para <b>gerenciar sua conta do YouTube</b> (escopo <code>youtube</code>). Usamos essa permissão apenas para:</p>
+<ul>
+  <li>buscar vídeos no YouTube correspondentes às músicas da sua playlist;</li>
+  <li>criar uma playlist na sua conta e adicionar a ela os vídeos que você confirmou.</li>
+</ul>
+<p>O app não lê seus e-mails, contatos, vídeos enviados, histórico de reprodução nem qualquer outro dado pessoal da sua conta, e não altera nem apaga playlists que você já tinha.</p>
+
+<h2>Onde seus dados ficam</h2>
+<ul>
+  <li><b>No seu navegador:</b> a autorização do Google (token de acesso) fica guardada apenas na sessão do seu navegador e some quando você fecha a aba. A lista de músicas, os clipes escolhidos e o progresso ficam salvos localmente no seu navegador para você poder continuar depois. Você pode apagá-los limpando os dados do site.</li>
+  <li><b>Em nossos servidores:</b> o app <b>não armazena</b> seus dados pessoais, tokens, listas de músicas nem playlists. Não há conta, cadastro nem banco de dados de usuários.</li>
+  <li><b>Contador de uso:</b> um serviço auxiliar (Cloudflare Workers) guarda apenas números agregados do limite diário do YouTube, sem identificar ninguém.</li>
+  <li><b>Playlists do Spotify:</b> quando você cola o link de uma playlist <b>pública</b>, esse serviço auxiliar lê a lista de músicas (título, artista, duração) para devolvê-la ao seu navegador. Nada disso é guardado. O app não pede login nem acesso à sua conta do Spotify.</li>
+</ul>
+
+<h2>Compartilhamento</h2>
+<p>Não vendemos, alugamos nem compartilhamos seus dados com terceiros, e não os usamos para publicidade. Os dados trafegam somente entre o seu navegador, o YouTube/Google e o serviço auxiliar descrito acima, apenas para executar a conversão que você pediu.</p>
+
+<h2>Uso de dados de APIs do Google</h2>
+<p>O uso e a transferência de informações recebidas das APIs do Google pelo Spot2Clip seguem a <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Política de Dados do Usuário dos Serviços de API do Google</a>, incluindo os requisitos de Uso Limitado. Os dados do YouTube são usados somente para oferecer a função descrita nesta página.</p>
+<p>O app também utiliza os <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">Termos de Serviço do YouTube</a>.</p>
+
+<h2>Como revogar o acesso</h2>
+<p>Você pode retirar a permissão a qualquer momento em <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>, escolhendo “Spot2Clip” e clicando em “Remover acesso”. As playlists já criadas continuam na sua conta do YouTube e podem ser apagadas por você normalmente.</p>
+
+<h2>Crianças</h2>
+<p>O app não é direcionado a menores de 13 anos e não coleta intencionalmente dados de crianças.</p>
+
+<h2>Mudanças nesta política</h2>
+<p>Se o app mudar a forma de tratar dados, esta página será atualizada, e a data no topo também.</p>
+
+<h2>Contato</h2>
+<p id="contact">Dúvidas sobre privacidade: use o e-mail de suporte informado na tela de autorização do Google.</p>
+
+<hr>
+<p class="mute"><a href="./">← Voltar ao Spot2Clip</a></p>
+</div>
+</div>
+<script>
+(function(){
+  var c=(window.SPOT2CLIP&&window.SPOT2CLIP.contactEmail)||'';
+  if(/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c)){
+    var p=document.getElementById('contact');
+    p.textContent='Dúvidas sobre privacidade ou pedidos relacionados aos seus dados: ';
+    var a=document.createElement('a');a.href='mailto:'+c;a.textContent=c;p.appendChild(a);p.appendChild(document.createTextNode('.'));
+  }
+})();
+</script>
+</body>
+</html>
