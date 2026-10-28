@@ -5,82 +5,172 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Spot2Clip · Playlist do Spotify em videoclipes</title>
 <meta name="description" content="Transforme sua playlist do Spotify em uma playlist de videoclipes no YouTube, pronta para a TV da sala.">
+<meta name="theme-color" content="#0b0b10">
 <script src="config.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
-:root{--bg:#0e1013;--card:#171a20;--card2:#1d2129;--line:#272c36;--text:#eef1f5;--mute:#8c95a3;--acc:#ff4d6d;--acc2:#7c5cff;--ok:#2ecc71;--warn:#f5b73b;--bad:#ff5d5d}
+:root{--bg:#0b0b10;--card:#14141b;--card2:#1b1b25;--line:#262634;--text:#f1f2f7;--mute:#9a9db0;--acc:#ff4d6d;--acc2:#7c5cff;--acc3:#ffa56b;--ok:#2ecc71;--warn:#f5b73b;--bad:#ff5d5d;--grad:linear-gradient(90deg,#7c5cff,#c25bf0);--glass:rgba(255,255,255,.035);--glass-line:rgba(255,255,255,.09)}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-.wrap{max-width:880px;margin:0 auto;padding:18px 16px 80px}
-header{display:flex;justify-content:center;align-items:center;margin-bottom:10px;position:relative}
-#btnMine{position:absolute;right:0;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:8px;border-radius:99px;padding:4px 12px 4px 4px;font-size:14px;max-width:62%}
-#btnMine img{width:28px;height:28px;border-radius:50%;object-fit:cover;background:var(--line)}
-#btnMine span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pl{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line);flex-wrap:wrap}
-.pl:first-child{border-top:0}
-.logo{font-weight:800;font-size:20px;letter-spacing:-.5px;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
-.hero{text-align:center;padding:26px 6px 22px}
-.hero h1{font-size:clamp(26px,5.4vw,40px);line-height:1.15;margin:0 0 10px;letter-spacing:-1px}
-.hero h1 span{background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
-.hero p{margin:0 auto;max-width:520px;color:var(--mute);font-size:17px}
+[hidden]{display:none!important}
+body:not([data-view="s1"]) #resume{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-text-size-adjust:100%;overflow-x:hidden}
+body::before{content:"";position:absolute;left:0;right:0;top:0;height:760px;z-index:-1;pointer-events:none;background:radial-gradient(520px 340px at 50% 300px,rgba(255,150,90,.20),transparent 70%),radial-gradient(620px 420px at 12% 120px,rgba(124,92,255,.22),transparent 70%),radial-gradient(520px 380px at 92% 80px,rgba(255,77,109,.12),transparent 70%)}
+.wrap{max-width:960px;margin:0 auto;padding:0 18px 70px}
+a{color:#b39dff}
+/* topo */
+.nav{position:sticky;top:0;z-index:20;background:rgba(11,11,16,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--glass-line)}
+.nav-in{max-width:960px;margin:0 auto;padding:10px 18px;display:flex;align-items:center;gap:10px}
+.logo{font-weight:800;font-size:21px;letter-spacing:-.6px;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent;text-decoration:none}
+.sp-grow{flex:1}
+#qWrap{position:relative}
+#qBadge{display:flex;align-items:center;gap:7px;border-radius:99px;padding:6px 12px;font-size:13px;background:var(--glass);border:1px solid var(--glass-line);white-space:nowrap}
+#qBadge i{width:8px;height:8px;border-radius:50%;background:var(--ok);display:block}
+#qBadge.warn i{background:var(--warn)}#qBadge.bad i{background:var(--bad)}
+#qPanel{position:absolute;right:0;top:calc(100% + 8px);width:min(340px,calc(100vw - 36px));background:var(--card);border:1px solid var(--glass-line);border-radius:16px;padding:14px 16px;box-shadow:0 18px 50px #000a}
+#qPanel[hidden]{display:none}
+#btnMine{display:flex;align-items:center;gap:8px;border-radius:99px;padding:4px 14px 4px 4px;font-size:14px;background:var(--glass);border:1px solid var(--glass-line);max-width:46vw}
+#btnMine .av{width:30px;height:30px;border-radius:50%;background:var(--card2);display:grid;place-items:center;overflow:hidden;flex:none}
+#btnMine .av img{width:100%;height:100%;object-fit:cover;display:block}
+#btnMine span.nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.av svg{width:60%;height:60%;fill:var(--mute)}
+body[data-view="s4"] #qWrap{display:none}
+/* botões e campos */
 button,select,input,textarea{font:inherit;color:inherit}
-button{cursor:pointer;border:1px solid var(--line);background:var(--card2);border-radius:12px;padding:10px 16px}
-button:hover{border-color:#3a4150}
-button.primary{background:linear-gradient(90deg,var(--acc),var(--acc2));border:0;font-weight:700;color:#fff}
-button.primary:disabled{opacity:.5;cursor:wait}
-button.big{padding:14px 24px;font-size:16px;border-radius:99px}
-button.sm{padding:4px 10px;font-size:13px;border-radius:8px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:16px}
-h2{margin:0 0 6px;font-size:18px}
+button{cursor:pointer;border:1px solid var(--glass-line);background:var(--card2);border-radius:12px;padding:10px 16px;transition:border-color .15s,transform .15s}
+button:hover{border-color:#44445a}
+button.primary{background:var(--grad);border:0;font-weight:700;color:#fff;box-shadow:0 8px 28px rgba(124,92,255,.35)}
+button.primary:hover{transform:translateY(-1px)}
+button.primary:disabled{opacity:.5;cursor:wait;transform:none}
+button.big{padding:14px 26px;font-size:16px;border-radius:99px}
+button.sm{padding:5px 12px;font-size:13px;border-radius:99px}
+button.ghost{background:transparent}
+.card{background:var(--glass);border:1px solid var(--glass-line);border-radius:22px;padding:22px;margin-bottom:16px}
+h2{margin:0 0 6px;font-size:19px;letter-spacing:-.3px}
 .mute,small{color:var(--mute)}
-.tabs{display:flex;gap:6px;margin:12px 0}
-.tabs button{border-radius:99px;padding:6px 16px}
-.tabs button.on{background:var(--text);color:#111;border-color:var(--text)}
-input[type=text],textarea,select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:11px 13px}
-textarea{min-height:110px;resize:vertical}
-.row{display:grid;grid-template-columns:auto 120px 1fr auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
-.row:first-child{border-top:0}
-.row img{width:120px;height:68px;border-radius:8px;object-fit:cover;background:var(--line);display:block}
-.noimg{width:120px;height:68px;border-radius:8px;background:var(--card2);display:grid;place-items:center;color:var(--mute);font-size:12px}
-.row .sp{font-weight:600}
-.row .vd{color:var(--mute);font-size:14px;overflow:hidden;text-overflow:ellipsis}
-.row.off{opacity:.45}
-.badge{font-size:12px;font-weight:700;border-radius:99px;padding:2px 9px;border:1px solid;white-space:nowrap}
-.badge.ok{color:var(--ok);border-color:#1f5c3a}.badge.warn{color:var(--warn);border-color:#6b5217}.badge.bad{color:var(--bad);border-color:#6b2a2a}.badge.mute{color:var(--mute);border-color:var(--line)}
-details summary{cursor:pointer;color:var(--acc2);font-size:14px;margin-top:6px}
-details select{margin:6px 0}
-.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin:12px 0}
-.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .2s}
 .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .grow{flex:1}
-.banner{background:#1f1a2e;border:1px solid #3b2f66}
-.quota{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin:0 0 6px}
-.quota .bar{margin:8px 0 6px}
+.tabs{display:flex;gap:6px;margin:12px 0}
+.tabs button{border-radius:99px;padding:7px 16px;white-space:nowrap}
+.tabs button.on{background:var(--text);color:#111;border-color:var(--text);font-weight:600}
+input[type=text],textarea,select{width:100%;background:rgba(0,0,0,.35);border:1px solid var(--glass-line);border-radius:14px;padding:12px 14px}
+input[type=text]:focus,textarea:focus,select:focus{outline:2px solid rgba(124,92,255,.55);outline-offset:1px}
+textarea{min-height:110px;resize:vertical}
+.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin:12px 0}
+.bar>i{display:block;height:100%;width:0;background:var(--grad);transition:width .2s}
+.banner{background:rgba(124,92,255,.10);border-color:rgba(124,92,255,.35)}
+.badge{font-size:12px;font-weight:700;border-radius:99px;padding:2px 9px;border:1px solid;white-space:nowrap}
+.badge.ok{color:var(--ok);border-color:#1f5c3a}.badge.warn{color:var(--warn);border-color:#6b5217}.badge.bad{color:var(--bad);border-color:#6b2a2a}.badge.mute{color:var(--mute);border-color:var(--line)}
+details summary{cursor:pointer;color:#b39dff;font-size:14px;margin-top:6px}
+details select{margin:6px 0}
 .part{border-radius:99px;padding:6px 14px;font-size:14px}
 .part.on{background:var(--text);color:#111;border-color:var(--text)}
 .opt{display:flex;gap:8px;align-items:center;margin:5px 0;cursor:pointer;font-size:15px}
 .opt input{margin:0}
 .opt.dis{opacity:.55;cursor:default}
-#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#fff;color:#111;padding:11px 18px;border-radius:12px;max-width:90vw;box-shadow:0 8px 30px #0008;display:none;z-index:9}
+/* hero */
+.hero{text-align:center;padding:54px 4px 30px}
+.pill{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.18);border-radius:99px;padding:5px 14px;font-size:13px;color:#d9d6ee;background:rgba(255,255,255,.04);margin-bottom:20px}
+.pill b{color:var(--acc3)}
+.hero h1{font-size:clamp(34px,7.4vw,62px);line-height:1.06;margin:0 auto 16px;letter-spacing:-2px;max-width:760px;font-weight:700;background:linear-gradient(95deg,#e7eaff 5%,#ffc08f 48%,#ff7ab0 92%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{margin:0 auto;max-width:520px;color:var(--mute);font-size:clamp(16px,2.4vw,18px)}
+.hero-cta{margin-top:22px}
+.conv{max-width:720px;margin:6px auto 0}
+.conv .card{background:rgba(20,20,27,.82);backdrop-filter:blur(10px);box-shadow:0 30px 80px rgba(0,0,0,.45)}
+/* landing */
+.sec{padding:64px 0 6px}
+.sec-h{text-align:center;margin-bottom:26px}
+.sec-h h2{font-size:clamp(26px,5vw,38px);letter-spacing:-1.2px;line-height:1.12;margin:0 0 8px;font-weight:600;background:linear-gradient(95deg,#e7eaff 10%,#ffc08f 60%,#ff8ab8);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sec-h p{margin:0 auto;max-width:520px;color:var(--mute)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.feat{background:var(--glass);border:1px solid var(--glass-line);border-radius:20px;padding:20px}
+.feat .n{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-weight:800;background:var(--grad);color:#fff;margin-bottom:12px}
+.feat h3{margin:0 0 4px;font-size:17px}
+.feat p{margin:0;color:var(--mute);font-size:15px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+.stat{background:var(--glass);border:1px solid var(--glass-line);border-radius:20px;padding:18px;text-align:center}
+.stat b{display:block;font-size:clamp(24px,4.4vw,34px);letter-spacing:-1px;background:linear-gradient(95deg,#fff,#ffb27d);-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat span{color:var(--mute);font-size:14px}
+.steps{display:grid;gap:12px;max-width:720px;margin:0 auto}
+.step{display:flex;gap:14px;background:var(--glass);border:1px solid var(--glass-line);border-radius:20px;padding:16px 18px}
+.step .n{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:800;background:rgba(124,92,255,.18);border:1px solid rgba(124,92,255,.5);color:#d3c8ff}
+.step h3{margin:0 0 2px;font-size:16px}
+.step p{margin:0;color:var(--mute);font-size:15px}
+.step q{color:#e9e7f7;font-style:normal;font-weight:600}
+.trust{max-width:720px;margin:14px auto 0;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.trust .feat{padding:16px 18px}
+.faq{max-width:720px;margin:0 auto}
+.faq details{background:var(--glass);border:1px solid var(--glass-line);border-radius:16px;padding:14px 18px;margin-bottom:10px}
+.faq summary{margin:0;color:var(--text);font-weight:600;font-size:16px;list-style:none;display:flex;justify-content:space-between;gap:12px}
+.faq summary::after{content:"+";color:var(--mute);font-size:20px;line-height:1}
+.faq details[open] summary::after{content:"–"}
+.faq details p{margin:10px 0 0;color:var(--mute);font-size:15px}
+/* login pré-aviso */
+#loginPre{margin-top:14px;background:rgba(245,183,59,.07);border:1px solid rgba(245,183,59,.28);border-radius:16px;padding:12px 16px}
+#loginPre summary{margin:0;color:#f5d58a;font-weight:600}
+#loginPre ol{margin:10px 0 4px;padding-left:20px;color:#d6d3e6;font-size:14.5px}
+#loginPre li{margin:4px 0}
+/* minhas playlists */
+.prof{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.prof .av{width:64px;height:64px;border-radius:50%;background:var(--card2);display:grid;place-items:center;overflow:hidden;border:2px solid rgba(124,92,255,.6);flex:none}
+.prof .av img{width:100%;height:100%;object-fit:cover}
+.prof h2{margin:0;font-size:22px}
+.h3s{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin:22px 0 10px}
+.pc{background:var(--glass);border:1px solid var(--glass-line);border-radius:20px;padding:16px 18px;margin-bottom:12px}
+.pc-top{display:flex;gap:12px;align-items:flex-start}
+.pc-ic{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:rgba(124,92,255,.16);color:#cbbfff;font-weight:800}
+.pc-ic.ok{background:rgba(46,204,113,.13);color:var(--ok)}
+.pc h3{margin:0;font-size:16px;overflow-wrap:anywhere}
+.pc small{display:block}
+.pc .bar{margin:12px 0 8px;height:6px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12px;padding:3px 10px;border-radius:99px;border:1px solid var(--glass-line);color:var(--mute)}
+.chip.done{color:var(--ok);border-color:#1f5c3a}
+.pc-act{display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap}
+.pc-act .primary{flex:1;min-width:190px}
+.pc-act a{flex:0 0 auto;text-decoration:none}
+.lnk{background:none;border:0;color:var(--mute);padding:8px 6px;text-decoration:underline;font-size:14px}
+.empty{text-align:center;padding:30px 10px;color:var(--mute)}
+/* revisão */
+.row{display:grid;grid-template-columns:auto 120px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--glass-line)}
+.row:first-child{border-top:0}
+.row img{width:120px;height:68px;border-radius:10px;object-fit:cover;background:var(--line);display:block}
+.noimg{width:120px;height:68px;border-radius:10px;background:var(--card2);display:grid;place-items:center;color:var(--mute);font-size:12px}
+.row .sp{font-weight:600}
+.row .vd{color:var(--mute);font-size:14px;overflow:hidden;text-overflow:ellipsis}
+.row.off{opacity:.45}
 #rows.only-review .row.hi{display:none}
-@media(max-width:640px){.row{grid-template-columns:auto 1fr}.row img,.noimg{width:100%;height:auto;aspect-ratio:16/9}.row .acts{grid-column:1/-1}}
+footer{text-align:center;margin-top:50px;font-size:13px;color:var(--mute);border-top:1px solid var(--glass-line);padding-top:22px}
+footer a{color:inherit}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#fff;color:#111;padding:11px 18px;border-radius:12px;max-width:90vw;box-shadow:0 8px 30px #0008;display:none;z-index:99}
+@media(max-width:760px){.grid3,.stats{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.stat{padding:14px 8px}.trust{grid-template-columns:1fr}.hero{padding:38px 2px 22px}.sec{padding:46px 0 4px}}
+@media(max-width:640px){.row{grid-template-columns:auto 1fr}.row img,.noimg{width:100%;height:auto;aspect-ratio:16/9}.row .acts{grid-column:1/-1}.card{padding:18px 16px;border-radius:20px}}
+@media(max-width:480px){#qPanel{position:fixed;left:14px;right:14px;top:58px;width:auto}.tabs button{padding:7px 12px;font-size:15px}#btnMine span.nm{display:none}#btnMine{padding:4px}#qBadge .full{display:none}.nav-in{padding:9px 14px}.wrap{padding:0 14px 60px}.flex .grow{min-width:100%}.pc-act .primary{min-width:100%}}
 </style>
 </head>
-<body>
-<div class="wrap">
-<header><div class="logo">Spot2Clip</div><button id="btnMine" hidden><img id="meImg" alt="" referrerpolicy="no-referrer"><span id="meName">Minhas playlists</span></button></header>
+<body data-view="s1">
+<nav class="nav"><div class="nav-in">
+  <a class="logo" href="./">Spot2Clip</a>
+  <span class="sp-grow"></span>
+  <div id="qWrap" hidden>
+    <button id="qBadge" aria-expanded="false" aria-controls="qPanel" title="Limite diário do YouTube"><i></i><span id="qBadgeTxt">–</span></button>
+    <div id="qPanel" hidden>
+      <div class="flex"><b>Limite diário do YouTube</b></div>
+      <div id="qTxt" style="margin-top:2px"></div>
+      <div class="bar"><i id="qBar"></i></div>
+      <small id="qSub"></small>
+    </div>
+  </div>
+  <button id="btnMine" aria-label="Minhas playlists"><span class="av"><img id="meImg" alt="" referrerpolicy="no-referrer" hidden><svg id="meIco" viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z"/></svg></span><span class="nm" id="meName">Minhas playlists</span></button>
+</div></nav>
 
-<div class="quota" id="quota" hidden>
-  <div class="flex"><b>Limite diário do YouTube</b><span class="grow"></span><span id="qTxt"></span></div>
-  <div class="bar"><i id="qBar"></i></div>
-  <small id="qSub"></small>
-</div>
+<main class="wrap">
 
-<div id="notReady" class="card banner" hidden>
+<div id="notReady" class="card banner" hidden style="margin-top:18px">
   <b>Estamos terminando de preparar o app.</b><br><span class="mute">Volte em alguns minutos.</span>
 </div>
 
-<div id="resume" class="card banner" hidden>
+<div id="resume" class="card banner" hidden style="margin-top:18px">
   <div class="flex"><div class="grow"><b>Você tem uma playlist em andamento</b><br><small id="resumeTxt"></small></div>
   <button class="primary" id="btnResume">Continuar</button><button id="btnDiscard">Descartar</button></div>
 </div>
@@ -88,10 +178,12 @@ details select{margin:6px 0}
 <!-- PASSO 1 -->
 <section id="s1">
   <div class="hero">
-    <h1>Suas playlists do Spotify em <span>videoclipes</span></h1>
+    <div class="pill"><b>●</b> Grátis · sem cadastro · só com o seu Google</div>
+    <h1>Suas playlists do Spotify em videoclipes</h1>
     <p>Cole o link da playlist, confira os clipes que escolhemos e assista na TV da sala.</p>
   </div>
 
+  <div class="conv">
   <div class="card">
     <h2>1 · Sua playlist</h2>
     <div class="tabs"><button class="on" data-tab="tSp">Link do Spotify</button><button data-tab="tCsv">Arquivo CSV / lista</button></div>
@@ -122,13 +214,64 @@ details select{margin:6px 0}
       </div>
     </div>
     <small id="readyNote"></small>
-    <div style="margin-top:14px"><button class="primary big" id="btnSearch">Continuar com Google e buscar os clipes →</button></div>
-    <p><small id="readyHint">Vamos pedir permissão ao Google para criar a playlist no seu YouTube. Se aparecer um aviso de app não verificado, clique em “Avançado” e depois em “Continuar”.</small></p>
+    <details id="loginPre" open>
+      <summary>Antes de entrar: o que o Google vai mostrar</summary>
+      <ol>
+        <li>Escolha a sua conta do Google.</li>
+        <li>Vai aparecer <b>“O Google não verificou este app”</b>. É normal: o Spot2Clip é um projeto independente. Clique em <b>Avançado</b> e depois em <b>Acessar Spot2Clip (não seguro)</b>.</li>
+        <li>Na tela de permissão, confirme <b>Continuar</b>. Usamos o acesso só para criar a sua playlist no YouTube.</li>
+      </ol>
+      <small>Isso acontece só na primeira vez neste navegador.</small>
+    </details>
+    <div style="margin-top:16px"><button class="primary big" id="btnSearch">Continuar com Google e buscar os clipes →</button></div>
+    <p style="margin:10px 0 0"><small id="readyHint"></small></p>
+  </div>
+  </div>
+
+  <div id="landing">
+    <div class="sec" id="como">
+      <div class="sec-h"><h2>Como funciona</h2><p>Três passos, sem baixar nada e sem criar conta.</p></div>
+      <div class="grid3">
+        <div class="feat"><div class="n">1</div><h3>Cole o link</h3><p>Use o link de uma playlist pública do Spotify, ou envie uma lista de músicas.</p></div>
+        <div class="feat"><div class="n">2</div><h3>Confira os clipes</h3><p>Escolhemos o videoclipe mais provável de cada música. Você troca o que quiser.</p></div>
+        <div class="feat"><div class="n">3</div><h3>Assista na TV</h3><p>A playlist é criada no seu YouTube, pronta para abrir no app da TV.</p></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><b>≈100</b><span>músicas por dia</span></div>
+        <div class="stat"><b>0</b><span>senhas guardadas</span></div>
+        <div class="stat"><b>Grátis</b><span>para todo mundo</span></div>
+      </div>
+    </div>
+
+    <div class="sec" id="login">
+      <div class="sec-h"><h2>Sobre o login com o Google</h2><p>Vão aparecer alguns avisos na primeira vez. Aqui está o que é cada um.</p></div>
+      <div class="steps">
+        <div class="step"><div class="n">1</div><div><h3>Escolha a sua conta</h3><p>É a conta do YouTube onde a playlist vai ser criada.</p></div></div>
+        <div class="step"><div class="n">2</div><div><h3>Aviso: <q>O Google não verificou este app</q></h3><p>O Spot2Clip é um projeto independente e ainda não passou pela verificação do Google, por isso o aviso aparece. Clique em <b>Avançado</b> e depois em <b>Acessar Spot2Clip (não seguro)</b>.</p></div></div>
+        <div class="step"><div class="n">3</div><div><h3>Permissão: <q>Gerenciar sua conta do YouTube</q></h3><p>É esse o nome que o Google dá à permissão necessária para criar playlists. Clique em <b>Continuar</b>.</p></div></div>
+      </div>
+      <div class="trust">
+        <div class="feat"><h3>O que o app faz</h3><p>Busca vídeos e cria uma playlist na sua conta. Nada além disso.</p></div>
+        <div class="feat"><h3>O que ele não faz</h3><p>Não lê seus e-mails, não mexe nas suas playlists antigas e não guarda sua senha.</p></div>
+        <div class="feat"><h3>Só na primeira vez</h3><p>Depois de autorizar, este navegador lembra de você. A permissão do Google dura cerca de 1 hora; ao voltar, é só um clique para reconectar.</p></div>
+        <div class="feat"><h3>Você manda no acesso</h3><p>Dá para remover a permissão a qualquer momento em <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>.</p></div>
+      </div>
+    </div>
+
+    <div class="sec" id="faq">
+      <div class="sec-h"><h2>Perguntas frequentes</h2></div>
+      <div class="faq">
+        <details><summary>Por que o limite de cerca de 100 músicas por dia?</summary><p>É o limite gratuito que o YouTube dá ao app. Ele renova todo dia de madrugada. Playlists maiores são divididas em partes e você continua no dia seguinte, de onde parou.</p></details>
+        <details><summary>A minha playlist precisa estar pública?</summary><p>Só para ler o link. Você pode deixá-la pública, copiar o link e voltar a deixá-la privada depois. Se preferir, use um arquivo CSV ou cole uma lista.</p></details>
+        <details><summary>Quem vê a playlist criada no YouTube?</summary><p>Por padrão, só quem tem o link, o que é ótimo para a TV. Você escolhe entre pública, só com link ou só você antes de criar.</p></details>
+        <details><summary>Preciso entrar de novo toda vez?</summary><p>O navegador lembra do seu login por cerca de 1 hora. Depois disso, é um clique para reconectar. Os avisos de app não verificado não devem se repetir.</p></details>
+      </div>
+    </div>
   </div>
 </section>
 
 <!-- PASSO 2 -->
-<section id="s2" hidden>
+<section id="s2" hidden style="padding-top:22px">
   <div class="card">
     <div class="flex"><h2 class="grow" id="revTitle"></h2><button class="sm" id="btnBack">← Voltar</button></div>
     <p class="mute" style="margin:4px 0 0">Escolhemos o videoclipe mais provável de cada música. Confira os que estão em amarelo ou vermelho e troque se quiser.</p>
@@ -152,17 +295,24 @@ details select{margin:6px 0}
 </section>
 
 <!-- MINHAS PLAYLISTS -->
-<section id="s4" hidden>
-  <div class="flex" style="margin-bottom:8px"><h2 class="grow" style="font-size:22px">Minhas playlists</h2><button id="btnMineBack">← Voltar</button></div>
-  <div class="card" id="mineBody"></div>
+<section id="s4" hidden style="padding-top:22px">
+  <div class="card">
+    <div class="prof">
+      <div class="av"><img id="pfImg" alt="" referrerpolicy="no-referrer" hidden><svg id="pfIco" viewBox="0 0 24 24" width="30" height="30" style="fill:var(--mute)"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z"/></svg></div>
+      <div class="grow" style="min-width:160px"><h2 id="pfName">Minhas playlists</h2><small id="pfSub"></small></div>
+      <button id="pfBtn" class="sm"></button>
+    </div>
+  </div>
+  <div class="flex" style="margin:6px 0 0"><h2 class="grow" style="font-size:24px;letter-spacing:-.6px">Minhas playlists</h2><button class="sm" id="btnMineBack">← Voltar ao início</button></div>
+  <div id="mineBody"></div>
   <small class="mute">Esta lista fica salva só neste navegador.</small>
 </section>
 
 <!-- PASSO 3 -->
-<section id="s3" hidden>
+<section id="s3" hidden style="padding-top:22px">
   <div class="card" style="text-align:center;padding:32px 18px">
     <div style="font-size:44px">🎬</div>
-    <h2 style="font-size:22px">Sua playlist de clipes está pronta!</h2>
+    <h2 style="font-size:24px">Sua playlist de clipes está pronta!</h2>
     <p class="mute" id="doneTxt"></p>
     <div class="flex" style="justify-content:center;margin:16px 0">
       <button class="primary big" id="btnNextPart" hidden></button>
@@ -175,8 +325,8 @@ details select{margin:6px 0}
     <div id="failed" style="text-align:left;margin-top:16px"></div>
   </div>
 </section>
-<footer style="text-align:center;margin-top:34px;font-size:13px" class="mute">Spot2Clip · <a href="privacy.html" style="color:inherit">Política de Privacidade</a><span id="forgetWrap" hidden> · <a href="#" id="forget" style="color:inherit">Esquecer meu login do Google neste navegador</a></span></footer>
-</div>
+<footer>Spot2Clip · <a href="privacy.html">Política de Privacidade</a><span id="forgetWrap" hidden> · <a href="#" id="forget">Esquecer meu login do Google neste navegador</a></span></footer>
+</main>
 <div id="toast"></div>
 
 <script>
@@ -322,14 +472,18 @@ async function refreshQuota(){
   renderQuota();
 }
 function renderQuota(){
-  const el=$('#quota'); if(!el) return;
+  const el=$('#qWrap'); if(!el) return;
   el.hidden=!cfg().googleClientId;
   const q=quotaState(),rs=resetInfo(),pct=Math.min(100,Math.max(q.used/QUOTA_LIMIT,q.searches/SEARCH_LIMIT)*100);
   const bar=$('#qBar');bar.style.width=pct+'%';bar.style.background=pct>=90?'var(--bad)':pct>=70?'var(--warn)':'';
+  const b=$('#qBadge');b.className=pct>=90?'bad':pct>=70?'warn':'';
+  $('#qBadgeTxt').innerHTML=q.songs<=0?'Limite de hoje atingido':`≈ ${q.songs} <span class="full">música${q.songs===1?'':'s'} </span>hoje`;
   $('#qTxt').textContent=q.songs<=0?'Limite de hoje atingido':`≈ ${q.songs} música${q.songs===1?'':'s'} restantes hoje`;
   $('#qSub').textContent=`${q.searches} de ${SEARCH_LIMIT} buscas · ${q.used.toLocaleString('pt-BR')} de ${QUOTA_LIMIT.toLocaleString('pt-BR')} unidades · renova ${rs.day} às ${rs.txt} · ${q.shared?'contador compartilhado entre todos os usuários':'estimativa deste navegador'}`;
   if(typeof src!=='undefined'&&src&&!$('#ready').hidden) renderReadyNote();
 }
+$('#qBadge').onclick=e=>{e.stopPropagation();const p=$('#qPanel');p.hidden=!p.hidden;$('#qBadge').setAttribute('aria-expanded',String(!p.hidden))};
+document.addEventListener('click',e=>{const p=$('#qPanel');if(!p.hidden&&!e.target.closest('#qWrap')){p.hidden=true;$('#qBadge').setAttribute('aria-expanded','false')}});
 
 /* ============ YouTube ============ */
 // O token do Google (válido por ~1 hora) fica salvo neste navegador. Além dele, guardamos só um marcador de que
@@ -455,13 +609,13 @@ function applyCands(r,vids){
   r.status=r.cands.length?'done':'none';
   r.include=r.cands.length>0;
 }
-const HINT_FIRST='Vamos pedir permissão ao Google para criar a playlist no seu YouTube. Se aparecer um aviso de app não verificado, clique em “Avançado” e depois em “Continuar”.';
-const HINT_AGAIN='Você já autorizou o Spot2Clip antes: o Google não vai repetir os avisos, só abre uma janelinha rápida.';
+const HINT_AGAIN='Você já autorizou o Spot2Clip antes: o Google não deve repetir os avisos, só abre uma janelinha rápida.';
 function renderChips(){
   const ok=ytOk(),seen=ytSeen(),pl=multi?` da parte ${selPart+1}`:'';
   $('#btnSearch').textContent=(ok?'Buscar os clipes':seen?'Reconectar e buscar os clipes':'Continuar com Google e buscar os clipes')+pl+' →';
-  $('#readyHint').textContent=seen?HINT_AGAIN:HINT_FIRST;
-  $('#readyHint').hidden=ok;
+  $('#readyHint').textContent=seen&&!ok?HINT_AGAIN:'';
+  $('#readyHint').hidden=!(seen&&!ok);
+  $('#loginPre').hidden=seen||ok;
   $('#forgetWrap').hidden=!seen;
 }
 
@@ -540,7 +694,7 @@ $('#file').onchange=async e=>{
 $('#btnPaste').onclick=()=>{const t=$('#paste').value.trim();t?useText(t,$('#csvName').value.trim()):toast('Cole uma lista ou envie um arquivo.')};
 
 /* ============ busca ============ */
-function show(id){['s1','s2','s3','s4'].forEach(s=>$('#'+s).hidden=s!==id);window.scrollTo({top:0})}
+function show(id){['s1','s2','s3','s4'].forEach(s=>$('#'+s).hidden=s!==id);document.body.dataset.view=id;$('#qPanel').hidden=true;window.scrollTo({top:0})}
 $('#btnSearch').onclick=async()=>{
   if(busy||!src) return;
   try{ if(!ytOk()) await ytLogin(); }catch(e){return toast(e.message)}
@@ -694,10 +848,16 @@ function histAdd(pid,title,part,count){
 }
 const me=()=>store.get('s2c_me');
 function renderMe(){
-  const m=me(),b=$('#btnMine');
-  b.hidden=false;
-  if(m){$('#meName').textContent=m.name;if(m.photo){$('#meImg').src=m.photo;$('#meImg').hidden=false}else $('#meImg').hidden=true}
-  else{$('#meName').textContent='Minhas playlists';$('#meImg').hidden=true}
+  const m=me();
+  const has=!!(m&&m.photo);
+  $('#meImg').hidden=!has;$('#meIco').style.display=has?'none':'';if(has)$('#meImg').src=m.photo;
+  $('#meName').textContent=m?m.name.split(' ')[0]:'Minhas playlists';
+  $('#pfImg').hidden=!has;$('#pfIco').style.display=has?'none':'';if(has)$('#pfImg').src=m.photo;
+  $('#pfName').textContent=m?m.name:'Você ainda não entrou';
+  $('#pfSub').textContent=m?'Canal do YouTube conectado':'Entre com o Google para ver seu nome e sua foto aqui.';
+  $('#pfBtn').textContent=m?'Sair deste navegador':'Entrar com Google';
+  $('#pfBtn').className=m?'sm':'sm primary';
+  if(ytOk()&&!m) loadMe();
 }
 async function loadMe(){
   try{
@@ -709,16 +869,27 @@ async function loadMe(){
 const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
 function renderMine(){
   const ms=Object.values(multis()).filter(m=>partsLeft(m).length),h=hist(),job=store.get('s2c_state');
-  let out='';
+  let prog='';
   if(job&&job.rows&&job.rows.length){
     const pend=job.rows.filter(r=>r.status==='pending').length;
-    out+=`<div class="pl"><div class="grow"><b>${esc(job.name)}</b>${job.part?` · parte ${job.part.i+1} de ${job.part.n}`:''}<br><small>Em andamento · ${job.rows.length} músicas${pend?` · ${pend} ainda sem busca`:''}</small></div><button class="primary" data-mine="job">Continuar importação</button></div>`;
+    prog+=`<div class="pc"><div class="pc-top"><div class="pc-ic">▶</div><div class="grow"><h3>${esc(job.name)}</h3><small>${job.part?`Parte ${job.part.i+1} de ${job.part.n} · `:''}${job.rows.length} músicas${pend?` · ${pend} ainda sem busca`:''}</small></div></div><div class="pc-act"><button class="primary" data-mine="job">Continuar importação</button></div></div>`;
   }
-  out+=ms.filter(m=>!(job&&job.part&&job.part.sig===m.sig)).map(m=>{const n=partsOf(m).length,d=m.doneParts.length;return `<div class="pl"><div class="grow"><b>${esc(m.name)}</b><br><small>${m.tracks.length} músicas · ${d} de ${n} partes concluídas · faltam as partes ${partsLeft(m).map(i=>i+1).join(', ')}</small></div><button class="primary" data-mine="multi" data-sig="${esc(m.sig)}">Continuar importação</button><button class="sm" data-mine="drop" data-sig="${esc(m.sig)}">Remover</button></div>`}).join('');
-  out+=h.map(e=>{const tot=Object.values(e.counts).reduce((a,b)=>a+b,0),pc=Object.keys(e.counts).length;return `<div class="pl"><div class="grow"><b>${esc(e.title)}</b><br><small>${tot} videoclipes · ${fmtDate(e.updated||e.date)}${e.n>1?` · ${pc} de ${e.n} partes`:''}</small></div><span class="badge ok">Criada</span><a href="https://www.youtube.com/playlist?list=${encodeURIComponent(e.pid)}" target="_blank" rel="noopener"><button class="sm">Abrir no YouTube</button></a></div>`}).join('');
-  $('#mineBody').innerHTML=out||'<p class="mute" style="margin:0">Você ainda não criou nenhuma playlist por aqui.</p>';
+  prog+=ms.filter(m=>!(job&&job.part&&job.part.sig===m.sig)).map(m=>{
+    const parts=partsOf(m),n=parts.length,d=m.doneParts.length;
+    const chips=parts.map((_,i)=>`<span class="chip ${m.doneParts.includes(i)?'done':''}">Parte ${i+1}${m.doneParts.includes(i)?' ✓':''}</span>`).join('');
+    return `<div class="pc"><div class="pc-top"><div class="pc-ic">${d}/${n}</div><div class="grow"><h3>${esc(m.name)}</h3><small>${m.tracks.length} músicas · ${d} de ${n} partes concluídas</small></div></div><div class="bar"><i style="width:${d/n*100}%"></i></div><div class="chips">${chips}</div><div class="pc-act"><button class="primary" data-mine="multi" data-sig="${esc(m.sig)}">Continuar importação</button><button class="lnk" data-mine="drop" data-sig="${esc(m.sig)}">Remover</button></div></div>`}).join('');
+  const done=h.map(e=>{const tot=Object.values(e.counts).reduce((a,b)=>a+b,0),pc=Object.keys(e.counts).length;return `<div class="pc"><div class="pc-top"><div class="pc-ic ok">✓</div><div class="grow"><h3>${esc(e.title)}</h3><small>${tot} videoclipes · ${fmtDate(e.updated||e.date)}${e.n>1?` · ${pc} de ${e.n} partes`:''}</small></div></div><div class="pc-act"><a href="https://www.youtube.com/playlist?list=${encodeURIComponent(e.pid)}" target="_blank" rel="noopener"><button class="ghost">Abrir no YouTube</button></a></div></div>`}).join('');
+  let out='';
+  if(prog) out+=`<div class="h3s">Em andamento</div>${prog}`;
+  if(done) out+=`<div class="h3s">Criadas</div>${done}`;
+  $('#mineBody').innerHTML=out||'<div class="empty">Você ainda não criou nenhuma playlist por aqui.<br><br><button class="primary" id="goHome">Criar a primeira</button></div>';
+  const g=$('#goHome'); if(g) g.onclick=()=>{show('s1')};
 }
 $('#btnMine').onclick=()=>{if(busy)return;renderMine();show('s4')};
+$('#pfBtn').onclick=async()=>{
+  if(me()){if(confirm('Sair deste navegador? Sua lista de playlists continua salva.')){ytForget();toast('Você saiu neste navegador.')}return}
+  try{await ytLogin();await loadMe()}catch(e){toast(e.message)}
+};
 $('#btnMineBack').onclick=()=>{show('s1');checkResume()};
 $('#mineBody').onclick=e=>{
   const b=e.target.closest('[data-mine]'); if(!b) return;
