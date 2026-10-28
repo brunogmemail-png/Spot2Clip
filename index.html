@@ -12,7 +12,12 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
 .wrap{max-width:880px;margin:0 auto;padding:18px 16px 80px}
-header{display:flex;justify-content:center;align-items:center;margin-bottom:10px}
+header{display:flex;justify-content:center;align-items:center;margin-bottom:10px;position:relative}
+#btnMine{position:absolute;right:0;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:8px;border-radius:99px;padding:4px 12px 4px 4px;font-size:14px;max-width:62%}
+#btnMine img{width:28px;height:28px;border-radius:50%;object-fit:cover;background:var(--line)}
+#btnMine span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.pl:first-child{border-top:0}
 .logo{font-weight:800;font-size:20px;letter-spacing:-.5px;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero{text-align:center;padding:26px 6px 22px}
 .hero h1{font-size:clamp(26px,5.4vw,40px);line-height:1.15;margin:0 0 10px;letter-spacing:-1px}
@@ -51,6 +56,11 @@ details select{margin:6px 0}
 .banner{background:#1f1a2e;border:1px solid #3b2f66}
 .quota{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin:0 0 6px}
 .quota .bar{margin:8px 0 6px}
+.part{border-radius:99px;padding:6px 14px;font-size:14px}
+.part.on{background:var(--text);color:#111;border-color:var(--text)}
+.opt{display:flex;gap:8px;align-items:center;margin:5px 0;cursor:pointer;font-size:15px}
+.opt input{margin:0}
+.opt.dis{opacity:.55;cursor:default}
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#fff;color:#111;padding:11px 18px;border-radius:12px;max-width:90vw;box-shadow:0 8px 30px #0008;display:none;z-index:9}
 #rows.only-review .row.hi{display:none}
 @media(max-width:640px){.row{grid-template-columns:auto 1fr}.row img,.noimg{width:100%;height:auto;aspect-ratio:16/9}.row .acts{grid-column:1/-1}}
@@ -58,7 +68,7 @@ details select{margin:6px 0}
 </head>
 <body>
 <div class="wrap">
-<header><div class="logo">Spot2Clip</div></header>
+<header><div class="logo">Spot2Clip</div><button id="btnMine" hidden><img id="meImg" alt="" referrerpolicy="no-referrer"><span id="meName">Minhas playlists</span></button></header>
 
 <div class="quota" id="quota" hidden>
   <div class="flex"><b>Limite diário do YouTube</b><span class="grow"></span><span id="qTxt"></span></div>
@@ -103,6 +113,14 @@ details select{margin:6px 0}
   <div class="card" id="ready" hidden>
     <h2>2 · Tudo certo!</h2>
     <p id="readyTxt" style="margin:6px 0"></p>
+    <div id="partsBox" hidden>
+      <p class="mute" id="partsInfo" style="margin:8px 0 8px"></p>
+      <div class="flex" id="partsList"></div>
+      <div style="margin-top:10px">
+        <label class="opt" id="optSingle"><input type="radio" name="pmode" value="single" checked> Uma playlist só no YouTube (as partes vão sendo adicionadas a ela)</label>
+        <label class="opt" id="optSep"><input type="radio" name="pmode" value="separate"> Uma playlist separada para cada parte</label>
+      </div>
+    </div>
     <small id="readyNote"></small>
     <div style="margin-top:14px"><button class="primary big" id="btnSearch">Continuar com Google e buscar os clipes →</button></div>
     <p><small id="readyHint">Vamos pedir permissão ao Google para criar a playlist no seu YouTube. Se aparecer um aviso de app não verificado, clique em “Avançado” e depois em “Continuar”.</small></p>
@@ -133,6 +151,13 @@ details select{margin:6px 0}
   </div>
 </section>
 
+<!-- MINHAS PLAYLISTS -->
+<section id="s4" hidden>
+  <div class="flex" style="margin-bottom:8px"><h2 class="grow" style="font-size:22px">Minhas playlists</h2><button id="btnMineBack">← Voltar</button></div>
+  <div class="card" id="mineBody"></div>
+  <small class="mute">Esta lista fica salva só neste navegador.</small>
+</section>
+
 <!-- PASSO 3 -->
 <section id="s3" hidden>
   <div class="card" style="text-align:center;padding:32px 18px">
@@ -140,15 +165,17 @@ details select{margin:6px 0}
     <h2 style="font-size:22px">Sua playlist de clipes está pronta!</h2>
     <p class="mute" id="doneTxt"></p>
     <div class="flex" style="justify-content:center;margin:16px 0">
+      <button class="primary big" id="btnNextPart" hidden></button>
       <a id="doneLink" target="_blank" rel="noopener"><button class="primary big">Abrir no YouTube</button></a>
       <button class="big" id="btnCopy">Copiar link</button>
       <button class="big" id="btnNew">Converter outra</button>
     </div>
+    <p class="mute" id="partsDone" style="margin:0 0 10px"></p>
     <small>Na TV: abra o app do YouTube (com a mesma conta) → Biblioteca → Playlists. Ou transmita pelo celular.</small>
     <div id="failed" style="text-align:left;margin-top:16px"></div>
   </div>
 </section>
-<footer style="text-align:center;margin-top:34px;font-size:13px" class="mute">Spot2Clip · <a href="privacy.html" style="color:inherit">Política de Privacidade</a></footer>
+<footer style="text-align:center;margin-top:34px;font-size:13px" class="mute">Spot2Clip · <a href="privacy.html" style="color:inherit">Política de Privacidade</a><span id="forgetWrap" hidden> · <a href="#" id="forget" style="color:inherit">Esquecer meu login do Google neste navegador</a></span></footer>
 </div>
 <div id="toast"></div>
 
@@ -232,6 +259,10 @@ function importText(text){
   return lines.map(l=>{const m=l.split(/\s+[-–—]\s+/);
     return m.length>=2?{title:m.slice(1).join(' - '),artists:[m[0].trim()],album:'',durationSec:null}:{title:l,artists:[''],album:'',durationSec:null}});
 }
+const PART_SIZE=100;
+const trKey=tr=>norm(((tr.artists||[])[0]||'')+' '+cleanTitle(tr.title));
+function splitParts(tracks,size=PART_SIZE){const out=[];for(let i=0;i<tracks.length;i+=size)out.push(tracks.slice(i,i+size));return out}
+function partTitle(name,i,n,mode){return mode==='separate'&&n>1?`${name} (videoclipes) — parte ${i+1} de ${n}`:`${name} (videoclipes)`}
 /*PURE-END*/
 
 /* ============ util ============ */
@@ -301,9 +332,16 @@ function renderQuota(){
 }
 
 /* ============ YouTube ============ */
+// O token do Google (válido por ~1 hora) fica salvo neste navegador. Além dele, guardamos só um marcador de que
+// você já autorizou o app: assim, nas próximas vezes o Google não repete a tela de consentimento nem os avisos.
+const YT_KEY='s2c_yt',YT_SEEN='s2c_yt_seen';
 let yt={token:null,exp:0};
-try{const s=JSON.parse(sessionStorage.getItem('s2c_yt')||'null');if(s&&Date.now()<s.exp)yt=s}catch{}
-const ytOk=()=>yt.token&&Date.now()<yt.exp;
+try{const s=JSON.parse(localStorage.getItem(YT_KEY)||'null');if(s&&s.token&&Date.now()<s.exp)yt=s}catch{}
+const ytOk=()=>!!(yt.token&&Date.now()<yt.exp);
+const ytSeen=()=>{try{return localStorage.getItem(YT_SEEN)==='1'}catch{return false}};
+function ytSave(){try{localStorage.setItem(YT_KEY,JSON.stringify(yt));localStorage.setItem(YT_SEEN,'1')}catch{}}
+function ytDrop(){yt={token:null,exp:0};try{localStorage.removeItem(YT_KEY)}catch{}}
+function ytForget(){ytDrop();try{localStorage.removeItem(YT_SEEN);localStorage.removeItem('s2c_me');sessionStorage.removeItem(YT_KEY)}catch{}renderChips();try{renderMe()}catch{}}
 function ytLogin(){
   return new Promise((res,rej)=>{
     const id=cfg().googleClientId;
@@ -314,10 +352,9 @@ function ytLogin(){
       callback:r=>{
         if(r.error) return rej(new Error('Não foi possível entrar com o Google ('+(r.error_description||r.error)+').'));
         yt={token:r.access_token,exp:Date.now()+(r.expires_in-60)*1000};
-        try{sessionStorage.setItem('s2c_yt',JSON.stringify(yt))}catch{}
-        renderChips();res();
+        ytSave();renderChips();res();setTimeout(()=>{if(!me())loadMe()},0);
       },
-      error_callback:e=>rej(new Error('Login do Google cancelado.'))
+      error_callback:e=>rej(new Error(e&&e.type==='popup_failed_to_open'?'O navegador bloqueou a janela do Google. Permita pop-ups para este site e tente de novo.':'Login do Google cancelado.'))
     }).requestAccessToken();
   });
 }
@@ -325,7 +362,7 @@ async function ytFetch(path,opts={}){
   if(!ytOk()) throw new Error('AUTH');
   const r=await fetch('https://www.googleapis.com/youtube/v3/'+path,{...opts,headers:{Authorization:'Bearer '+yt.token,'Content-Type':'application/json'}});
   const j=await r.json().catch(()=>({}));
-  if(r.status===401){yt={token:null,exp:0};sessionStorage.removeItem('s2c_yt');renderChips();throw new Error('AUTH')}
+  if(r.status===401){ytDrop();renderChips();throw new Error('AUTH')}
   if(!r.ok){const e=new Error(j.error?.message||('YouTube erro '+r.status));e.reason=j.error?.errors?.[0]?.reason;e.status=r.status;throw e}
   return j;
 }
@@ -340,24 +377,70 @@ async function ytVideos(ids){
   addQuota(COST.video);
   return j.items.map(v=>({id:v.id,title:v.snippet.title,channel:v.snippet.channelTitle,sec:isoSec(v.contentDetails.duration),views:+(v.statistics?.viewCount||0)}));
 }
+/* ============ memória de clipes (neste navegador + compartilhada pelo Worker) ============ */
+let memHits={},memQueue={};const memAsked=new Set();
+const localCache=()=>store.get('s2c_cache',{})||{};
+async function memPost(path,body){
+  const w=cfg().workerUrl; if(!w) return null;
+  try{const r=await fetch(w+path,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)});const j=await r.json();return j&&j.enabled?j:null}catch{return null}
+}
+async function memLookup(tracks){
+  const lc=localCache();
+  const keys=[...new Set(tracks.map(trKey))].filter(k=>k&&!memAsked.has(k)&&!lc[k]);
+  for(let i=0;i<keys.length;i+=40){
+    const chunk=keys.slice(i,i+40),j=await memPost('/cache/get',{keys:chunk});
+    if(!j) break;
+    chunk.forEach(k=>memAsked.add(k));Object.assign(memHits,j.hits||{});
+  }
+}
+const isCached=tr=>{const k=trKey(tr);return !!(localCache()[k]||memHits[k])};
+function memStore(key,vids){if(vids&&vids.length) memQueue[key]=vids}
+async function memFlush(){
+  const ks=Object.keys(memQueue);
+  for(let i=0;i<ks.length;i+=20){
+    const part={};ks.slice(i,i+20).forEach(k=>part[k]=memQueue[k]);
+    if(!await memPost('/cache/put',{entries:part})) return;
+    Object.keys(part).forEach(k=>delete memQueue[k]);
+  }
+}
 async function findVideos(tr){
+  const key=trKey(tr),cache=localCache();
+  if(cache[key]) return {vids:cache[key],from:'local'};
+  if(memHits[key]) return {vids:memHits[key],from:'shared'};
   const a=tr.artists[0]||'';
-  const key=norm(a+' '+cleanTitle(tr.title));
-  const cache=store.get('s2c_cache',{});
-  if(cache[key]) return cache[key];
   const q=(a+' '+cleanTitle(tr.title)+' official video').trim();
   let ids=await ytSearch(q,true);
   if(!ids.length) ids=await ytSearch(q,false);
   const vids=ids.length?await ytVideos(ids):[];
   const keys=Object.keys(cache); if(keys.length>1200) keys.slice(0,200).forEach(k=>delete cache[k]);
   cache[key]=vids; store.set('s2c_cache',cache);
-  return vids;
+  memStore(key,vids);
+  return {vids,from:'api'};
 }
 
 /* ============ estado ============ */
 let src=null;      // {name,tracks}
 let state=null;    // {name,rows,playlistId,ytTitle,privacy}
 let busy=false;
+let multi=null,selPart=0;   // playlist dividida em partes: {sig,name,tracks,size,mode,playlistId,doneParts}
+const multis=()=>store.get('s2c_multis',{})||{};
+const saveMulti=()=>{if(multi){const a=multis();a[multi.sig]=multi;store.set('s2c_multis',a)}};
+const clearMulti=(sig)=>{const a=multis();delete a[sig||(multi&&multi.sig)];store.set('s2c_multis',a);multi=null};
+const partsOf=m=>splitParts(m.tracks,m.size);
+const partsLeft=m=>partsOf(m).map((_,i)=>i).filter(i=>!m.doneParts.includes(i));
+function multiFor(s){
+  const sig=s.tracks.length+'|'+trKey(s.tracks[0])+'|'+trKey(s.tracks[s.tracks.length-1]);
+  const m=multis()[sig];
+  return (m&&Array.isArray(m.tracks))?m:{sig,name:s.name,tracks:s.tracks,size:PART_SIZE,mode:'single',playlistId:null,doneParts:[]};
+}
+const activeTracks=()=>!src?[]:(multi?(partsOf(multi)[selPart]||[]):src.tracks);
+function estSongsToday(tr){
+  const n=tr.length; if(!n) return 0;
+  const q=quotaState(),need=tr.filter(t=>!isCached(t)).length;
+  const avgU=(need*(COST.search+COST.video)+n*COST.insert)/n,avgS=need/n;
+  const byU=Math.floor((q.left-COST.create)/avgU),byS=avgS>0?Math.floor(q.searchesLeft/avgS):n;
+  return Math.max(0,Math.min(n,byU,byS));
+}
 const saveState=()=>store.set('s2c_state',state);
 const confOf=r=>{
   if(r.status==='pending') return 'pending';
@@ -372,9 +455,14 @@ function applyCands(r,vids){
   r.status=r.cands.length?'done':'none';
   r.include=r.cands.length>0;
 }
+const HINT_FIRST='Vamos pedir permissão ao Google para criar a playlist no seu YouTube. Se aparecer um aviso de app não verificado, clique em “Avançado” e depois em “Continuar”.';
+const HINT_AGAIN='Você já autorizou o Spot2Clip antes: o Google não vai repetir os avisos, só abre uma janelinha rápida.';
 function renderChips(){
-  $('#btnSearch').textContent=ytOk()?'Buscar os clipes →':'Continuar com Google e buscar os clipes →';
-  $('#readyHint').hidden=ytOk();
+  const ok=ytOk(),seen=ytSeen(),pl=multi?` da parte ${selPart+1}`:'';
+  $('#btnSearch').textContent=(ok?'Buscar os clipes':seen?'Reconectar e buscar os clipes':'Continuar com Google e buscar os clipes')+pl+' →';
+  $('#readyHint').textContent=seen?HINT_AGAIN:HINT_FIRST;
+  $('#readyHint').hidden=ok;
+  $('#forgetWrap').hidden=!seen;
 }
 
 /* ============ passo 1: origem das músicas ============ */
@@ -382,24 +470,40 @@ document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
   ['tSp','tCsv'].forEach(id=>$('#'+id).hidden=id!==b.dataset.tab);
 });
+function renderParts(){
+  const box=$('#partsBox');
+  if(!multi){box.hidden=true;return}
+  const parts=partsOf(multi),locked=!!multi.playlistId||multi.doneParts.length>0;
+  box.hidden=false;
+  $('#partsInfo').textContent=`Esta playlist tem ${multi.tracks.length} músicas, então vamos dividi-la em ${parts.length} partes de até ${multi.size}. Converta uma parte por vez: o limite diário do YouTube cobre cerca de uma parte por dia.`;
+  $('#partsList').innerHTML=parts.map((p,i)=>{const from=i*multi.size+1,to=i*multi.size+p.length,done=multi.doneParts.includes(i);return `<button class="part ${i===selPart?'on':''}" data-part="${i}">Parte ${i+1} · músicas ${from}–${to}${done?' ✓':''}</button>`}).join('');
+  document.querySelectorAll('input[name=pmode]').forEach(r=>{r.checked=r.value===multi.mode;r.disabled=locked});
+  $('#optSingle').classList.toggle('dis',locked);$('#optSep').classList.toggle('dis',locked);
+}
 function renderReadyNote(){
   if(!src) return;
-  const n=src.tracks.length,{songs}=quotaState(),rs=resetInfo(),notes=[];
-  if(n>songs){
-    notes.push(songs>0
-      ?`Hoje ainda dá para converter cerca de ${songs} das ${n} músicas, por causa do limite diário do YouTube. O resto continua ${rs.day} às ${rs.txt}, de onde você parou.`
-      :`O limite diário do YouTube já foi atingido hoje. A conversão só continua ${rs.day} às ${rs.txt}.`);
-  }
+  const tr=activeTracks(),n=tr.length,rs=resetInfo(),notes=[];
+  const cached=tr.filter(isCached).length;
+  if(cached>0) notes.push(`${cached} de ${n} músicas já estão na memória de clipes (reaproveitadas de outras conversões) e não gastam o limite diário.`);
+  const can=estSongsToday(tr);
+  if(can<n) notes.push(can>0
+    ?`Hoje ainda dá para converter cerca de ${can} das ${n} músicas${multi?' desta parte':''}, por causa do limite diário do YouTube. O resto continua ${rs.day} às ${rs.txt}, de onde você parou.`
+    :`O limite diário do YouTube já foi atingido hoje. A conversão só continua ${rs.day} às ${rs.txt}.`);
   if(src.capped) notes.push('O Spotify costuma mostrar só as 100 primeiras músicas pelo link. Se faltar alguma, use a aba “Arquivo CSV / lista”.');
   $('#readyNote').textContent=notes.join(' ');
 }
-function showReady(){
+function refreshReady(){renderParts();renderReadyNote();renderChips();memLookup(activeTracks()).then(renderReadyNote)}
+function showReady(keepPart){
   const n=src.tracks.length;
+  if(n>PART_SIZE){multi=multiFor(src);saveMulti();if(!keepPart){const l=partsLeft(multi);selPart=l.length?l[0]:0}}
+  else multi=null;
   $('#ready').hidden=false;
   $('#readyTxt').innerHTML=`<b>${esc(src.name)}</b> · ${n} música${n===1?'':'s'}`;
-  renderReadyNote();renderChips();
+  refreshReady();
   $('#ready').scrollIntoView({behavior:'smooth'});
 }
+$('#partsList').onclick=e=>{const b=e.target.closest('[data-part]');if(!b||busy||!multi)return;selPart=+b.dataset.part;refreshReady()};
+$('#partsBox').addEventListener('change',e=>{if(e.target.name==='pmode'&&multi){multi.mode=e.target.value;saveMulti()}});
 let linkTimer;
 async function loadLink(){
   if(busy) return;
@@ -436,11 +540,17 @@ $('#file').onchange=async e=>{
 $('#btnPaste').onclick=()=>{const t=$('#paste').value.trim();t?useText(t,$('#csvName').value.trim()):toast('Cole uma lista ou envie um arquivo.')};
 
 /* ============ busca ============ */
-function show(id){['s1','s2','s3'].forEach(s=>$('#'+s).hidden=s!==id);window.scrollTo({top:0})}
+function show(id){['s1','s2','s3','s4'].forEach(s=>$('#'+s).hidden=s!==id);window.scrollTo({top:0})}
 $('#btnSearch').onclick=async()=>{
-  if(busy) return;
+  if(busy||!src) return;
   try{ if(!ytOk()) await ytLogin(); }catch(e){return toast(e.message)}
-  state={name:src.name,rows:src.tracks.map(tr=>({tr,cands:[],sel:-1,include:true,status:'pending',inserted:false})),playlistId:null,ytTitle:src.name+' (videoclipes)',privacy:'unlisted'};
+  const tracks=activeTracks();
+  await memLookup(tracks);
+  const pc=multi?partsOf(multi).length:1,mode=multi?multi.mode:'single';
+  state={name:src.name,rows:tracks.map(tr=>({tr,cands:[],sel:-1,include:true,status:'pending',inserted:false})),
+    playlistId:(multi&&mode==='single'&&multi.playlistId)||null,
+    ytTitle:partTitle(src.name,selPart,pc,mode),privacy:'unlisted',
+    part:multi?{i:selPart,n:pc,mode,sig:multi.sig}:null,fromMem:0};
   saveState();showReview();runSearch();
 };
 $('#btnBack').onclick=()=>{if(busy)return;show('s1')};
@@ -452,8 +562,8 @@ async function runSearch(){
   if(busy) return;
   const todo=state.rows.filter(r=>r.status==='pending');
   if(!todo.length) return;
-  const songsLeft=quotaState().songs;
-  if(todo.length>songsLeft && !confirm(`Esta playlist tem ${todo.length} músicas e, pelo limite diário do YouTube, dá para buscar cerca de ${songsLeft} hoje. Vamos buscar até onde der e você continua amanhã, de onde parou. Seguir?`)) return;
+  const q=quotaState(),needApi=todo.filter(r=>!isCached(r.tr)).length;
+  if((needApi>q.searchesLeft||needApi*(COST.search+COST.video)>q.left) && !confirm(`Faltam buscar ${needApi} músicas novas e, pelo limite diário do YouTube, dá para buscar cerca de ${Math.min(q.searchesLeft,Math.floor(q.left/(COST.search+COST.video)))} hoje. Vamos buscar até onde der e você continua amanhã, de onde parou. Seguir?`)) return;
   busy=true;$('#btnContinueSearch').hidden=true;
   const bar=$('#searchBar');bar.hidden=false;bar.firstElementChild.style.width='0';
   let i=0,done=0,stop=null;
@@ -461,7 +571,7 @@ async function runSearch(){
   const worker=async()=>{
     while(!stop){
       const r=todo[i++]; if(!r) return;
-      try{ applyCands(r,await findVideos(r.tr)); updateRow(r); }
+      try{ const f=await findVideos(r.tr); applyCands(r,f.vids); if(f.from!=='api') state.fromMem=(state.fromMem||0)+1; updateRow(r); }
       catch(e){
         if(isQuota(e)) stop='quota';
         else if(e.message==='AUTH') stop='auth';
@@ -472,9 +582,9 @@ async function runSearch(){
     }
   };
   await Promise.all([worker(),worker(),worker()]);
-  saveState();busy=false;bar.hidden=true;renderSummary();flushQuota();
+  saveState();busy=false;bar.hidden=true;renderSummary();flushQuota();memFlush();
   if(stop==='quota') toast('Atingimos o limite diário do YouTube. Seu progresso foi salvo: volte amanhã e clique em “Continuar busca”.',10000);
-  if(stop==='auth') toast('Sua sessão do Google expirou. Clique em “Continuar busca” para entrar de novo.',9000);
+  if(stop==='auth') toast('Sua sessão do Google expirou (dura cerca de 1 hora). Clique em “Continuar busca”: é só um clique, sem os avisos de antes.',9000);
 }
 
 /* ============ revisão ============ */
@@ -500,15 +610,16 @@ function renderSummary(){
   const cnt={high:0,medium:0,low:0,none:0,manual:0,pending:0};
   state.rows.forEach(r=>cnt[confOf(r)]++);
   const inc=state.rows.filter(r=>r.include&&r.cands[r.sel]).length;
-  $('#summary').innerHTML=`${state.rows.length} músicas · <span style="color:var(--ok)">${cnt.high+cnt.manual} com certeza alta</span> · <span style="color:var(--warn)">${cnt.medium} para conferir</span> · <span style="color:var(--bad)">${cnt.low+cnt.none} incertas ou sem resultado</span>${cnt.pending?` · ${cnt.pending} aguardando busca`:''}`;
+  $('#summary').innerHTML=`${state.rows.length} músicas · <span style="color:var(--ok)">${cnt.high+cnt.manual} com certeza alta</span> · <span style="color:var(--warn)">${cnt.medium} para conferir</span> · <span style="color:var(--bad)">${cnt.low+cnt.none} incertas ou sem resultado</span>${cnt.pending?` · ${cnt.pending} aguardando busca`:''}${state.fromMem?` · ${state.fromMem} já estavam na memória (sem gastar limite)`:''}`;
   $('#btnContinueSearch').hidden=!(cnt.pending&&!busy);
   $('#createInfo').textContent=`${inc} vídeo${inc===1?'':'s'} serão adicionados`;
 }
 function showReview(){
   show('s2');
-  $('#revTitle').textContent='Confira os clipes: '+state.name;
+  $('#revTitle').textContent='Confira os clipes: '+state.name+(state.part?` — parte ${state.part.i+1} de ${state.part.n}`:'');
   $('#rows').innerHTML=state.rows.map(rowHTML).join('');
   $('#ytTitle').value=state.ytTitle;$('#privacy').value=state.privacy;
+  $('#ytTitle').disabled=!!state.playlistId;$('#privacy').disabled=!!state.playlistId;
   renderSummary();
 }
 $('#onlyReview').onchange=e=>$('#rows').classList.toggle('only-review',e.target.checked);
@@ -548,6 +659,7 @@ $('#btnCreate').onclick=async()=>{
     if(!state.playlistId){
       const j=await ytFetch('playlists?part=snippet,status',{method:'POST',body:JSON.stringify({snippet:{title,description:`Criada com Spot2Clip a partir de "${state.name}" do Spotify.`},status:{privacyStatus:state.privacy}})});
       addQuota(COST.create);state.playlistId=j.id;state.ytTitle=title;saveState();
+      if(state.part&&multi&&state.part.mode==='single'){multi.playlistId=state.playlistId;saveMulti()}
     }
     for(const r of todo){
       try{
@@ -568,30 +680,101 @@ $('#btnCreate').onclick=async()=>{
   saveState();busy=false;$('#btnCreate').disabled=false;bar.hidden=true;renderSummary();flushQuota();
   const left=items.filter(r=>!r.inserted&&!r.err).length;
   if(stop==='quota') return toast(`Atingimos o limite diário do YouTube, faltam ${left} vídeos. Volte amanhã e clique em “Criar playlist” de novo: continuamos de onde parou.`,10000);
-  if(stop==='auth') return toast('Sua sessão do Google expirou. Clique em “Criar playlist” para entrar de novo e continuar.',8000);
+  if(stop==='auth') return toast('Sua sessão do Google expirou (dura cerca de 1 hora). Clique em “Criar playlist”: é só um clique e continuamos de onde parou.',8000);
   if(stop) return;
   showDone(items);
+};
+/* ============ minhas playlists / perfil ============ */
+const hist=()=>store.get('s2c_hist',[])||[];
+function histAdd(pid,title,part,count){
+  const a=hist();let e=a.find(x=>x.pid===pid);
+  if(!e){e={pid,title,counts:{},n:part?part.n:1,date:Date.now()};a.unshift(e)}
+  e.title=title;e.counts[part?part.i:0]=count;e.updated=Date.now();
+  store.set('s2c_hist',a.slice(0,100));
+}
+const me=()=>store.get('s2c_me');
+function renderMe(){
+  const m=me(),b=$('#btnMine');
+  const show=!!m||hist().length>0||Object.keys(multis()).length>0;
+  b.hidden=!show;
+  if(m){$('#meName').textContent=m.name;if(m.photo){$('#meImg').src=m.photo;$('#meImg').hidden=false}else $('#meImg').hidden=true}
+  else{$('#meName').textContent='Minhas playlists';$('#meImg').hidden=true}
+}
+async function loadMe(){
+  try{
+    const j=await ytFetch('channels?part=snippet&mine=true');addQuota(1);
+    const sn=j.items&&j.items[0]&&j.items[0].snippet; if(!sn) return;
+    store.set('s2c_me',{name:sn.title,photo:(sn.thumbnails&&(sn.thumbnails.default||{}).url)||''});renderMe();
+  }catch{}
+}
+const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+function renderMine(){
+  const ms=Object.values(multis()).filter(m=>partsLeft(m).length),h=hist(),job=store.get('s2c_state');
+  let out='';
+  if(job&&job.rows&&job.rows.length){
+    const pend=job.rows.filter(r=>r.status==='pending').length;
+    out+=`<div class="pl"><div class="grow"><b>${esc(job.name)}</b>${job.part?` · parte ${job.part.i+1} de ${job.part.n}`:''}<br><small>Em andamento · ${job.rows.length} músicas${pend?` · ${pend} ainda sem busca`:''}</small></div><button class="primary" data-mine="job">Continuar importação</button></div>`;
+  }
+  out+=ms.filter(m=>!(job&&job.part&&job.part.sig===m.sig)).map(m=>{const n=partsOf(m).length,d=m.doneParts.length;return `<div class="pl"><div class="grow"><b>${esc(m.name)}</b><br><small>${m.tracks.length} músicas · ${d} de ${n} partes concluídas · faltam as partes ${partsLeft(m).map(i=>i+1).join(', ')}</small></div><button class="primary" data-mine="multi" data-sig="${esc(m.sig)}">Continuar importação</button><button class="sm" data-mine="drop" data-sig="${esc(m.sig)}">Remover</button></div>`}).join('');
+  out+=h.map(e=>{const tot=Object.values(e.counts).reduce((a,b)=>a+b,0),pc=Object.keys(e.counts).length;return `<div class="pl"><div class="grow"><b>${esc(e.title)}</b><br><small>${tot} videoclipes · ${fmtDate(e.updated||e.date)}${e.n>1?` · ${pc} de ${e.n} partes`:''}</small></div><span class="badge ok">Criada</span><a href="https://www.youtube.com/playlist?list=${encodeURIComponent(e.pid)}" target="_blank" rel="noopener"><button class="sm">Abrir no YouTube</button></a></div>`}).join('');
+  $('#mineBody').innerHTML=out||'<p class="mute" style="margin:0">Você ainda não criou nenhuma playlist por aqui.</p>';
+}
+$('#btnMine').onclick=()=>{if(busy)return;renderMine();show('s4')};
+$('#btnMineBack').onclick=()=>{show('s1');checkResume()};
+$('#mineBody').onclick=e=>{
+  const b=e.target.closest('[data-mine]'); if(!b) return;
+  const k=b.dataset.mine;
+  if(k==='job'){const s=store.get('s2c_state');if(!s)return;state=s;multi=s.part?(multis()[s.part.sig]||null):null;if(multi){src={name:multi.name,tracks:multi.tracks};selPart=s.part.i}showReview()}
+  if(k==='multi'){const m=multis()[b.dataset.sig];if(!m)return;multi=m;src={name:m.name,tracks:m.tracks};selPart=partsLeft(m)[0];show('s1');showReady(true)}
+  if(k==='drop'){if(!confirm('Remover esta importação em andamento? As partes já criadas no YouTube continuam lá.'))return;clearMulti(b.dataset.sig);renderMine();renderMe()}
 };
 function showDone(items){
   const ok=items.filter(r=>r.inserted).length,fail=items.filter(r=>!r.inserted);
   const link='https://www.youtube.com/playlist?list='+state.playlistId;
-  $('#doneTxt').textContent=`“${state.ytTitle}” com ${ok} videoclipes.`;
+  const pl=state.part?` (parte ${state.part.i+1} de ${state.part.n})`:'';
+  $('#doneTxt').textContent=`“${state.ytTitle}”${pl} com ${ok} videoclipes.`;
   $('#doneLink').href=link;
   $('#btnCopy').onclick=()=>navigator.clipboard.writeText(link).then(()=>toast('Link copiado!'));
   $('#failed').innerHTML=fail.length?`<b>Não consegui adicionar ${fail.length}:</b><ul>${fail.map(r=>`<li>${esc(r.tr.title)} — ${esc(r.err||'')}</li>`).join('')}</ul>`:'';
-  store.del('s2c_state');show('s3');
+  histAdd(state.playlistId,state.ytTitle,state.part,ok);
+  let remaining=[];
+  if(state.part&&multi){
+    if(!multi.doneParts.includes(state.part.i)) multi.doneParts.push(state.part.i);
+    remaining=partsLeft(multi);
+    if(remaining.length) saveMulti();
+  }
+  const nb=$('#btnNextPart');
+  nb.hidden=!remaining.length;
+  $('#partsDone').textContent=state.part?(remaining.length?`Faltam as partes ${remaining.map(i=>i+1).join(', ')}. Dá para seguir hoje, se ainda houver limite, ou voltar amanhã: o progresso fica salvo.`:'Todas as partes foram concluídas!'):'';
+  if(remaining.length){
+    nb.textContent=`Converter a parte ${remaining[0]+1}`;
+    nb.onclick=()=>{selPart=remaining[0];src={name:multi.name,tracks:multi.tracks};state=null;show('s1');showReady(true)};
+  }else if(state.part) clearMulti();
+  store.del('s2c_state');renderMe();show('s3');
 }
-$('#btnNew').onclick=()=>{state=null;src=null;$('#ready').hidden=true;$('#spLink').value='';store.del('s2c_state');show('s1')};
+$('#btnNew').onclick=()=>{state=null;src=null;multi=null;$('#ready').hidden=true;$('#spLink').value='';store.del('s2c_state');show('s1');checkResume()};
+$('#forget').onclick=e=>{e.preventDefault();ytForget();toast('Pronto: o login foi esquecido neste navegador.')};
 
 /* ============ retomar ============ */
 function checkResume(){
-  const s=store.get('s2c_state');
-  if(!s||!s.rows||!s.rows.length) return;
-  const ins=s.rows.filter(r=>r.inserted).length,pend=s.rows.filter(r=>r.status==='pending').length;
+  $('#resume').hidden=true;renderMe();
+  const s=store.get('s2c_state'),ms=Object.values(multis()).filter(m=>Array.isArray(m.tracks)&&partsLeft(m).length);
+  const hasJob=!!(s&&s.rows&&s.rows.length);
+  if(!hasJob&&!ms.length) return;
   $('#resume').hidden=false;
-  $('#resumeTxt').textContent=`“${s.name}” · ${s.rows.length} músicas`+(s.playlistId?` · ${ins} já adicionadas ao YouTube`:'')+(pend?` · ${pend} ainda sem busca`:'');
-  $('#btnResume').onclick=()=>{state=s;$('#resume').hidden=true;showReview()};
-  $('#btnDiscard').onclick=()=>{store.del('s2c_state');$('#resume').hidden=true};
+  if(hasJob){
+    const ins=s.rows.filter(r=>r.inserted).length,pend=s.rows.filter(r=>r.status==='pending').length;
+    $('#resumeTxt').textContent=`“${s.name}”`+(s.part?` · parte ${s.part.i+1} de ${s.part.n}`:'')+` · ${s.rows.length} músicas`+(s.playlistId?` · ${ins} já adicionadas ao YouTube`:'')+(pend?` · ${pend} ainda sem busca`:'');
+    $('#btnResume').onclick=()=>{state=s;multi=s.part?(multis()[s.part.sig]||null):null;if(multi){src={name:multi.name,tracks:multi.tracks};selPart=s.part.i}$('#resume').hidden=true;showReview()};
+  }else if(ms.length===1){
+    const m=ms[0],left=partsLeft(m);
+    $('#resumeTxt').textContent=`“${m.name}” · ${m.tracks.length} músicas divididas em partes · faltam as partes ${left.map(i=>i+1).join(', ')}`;
+    $('#btnResume').onclick=()=>{multi=m;src={name:m.name,tracks:m.tracks};selPart=left[0];$('#resume').hidden=true;show('s1');showReady(true)};
+  }else{
+    $('#resumeTxt').textContent=`Você tem ${ms.length} playlists com partes para continuar.`;
+    $('#btnResume').onclick=()=>{$('#resume').hidden=true;renderMine();show('s4')};
+  }
+  $('#btnDiscard').onclick=()=>{if(!confirm('Descartar o que está em andamento?')) return;store.del('s2c_state');store.set('s2c_multis',{});multi=null;$('#resume').hidden=true;renderMe()};
 }
 
 /* ============ init ============ */

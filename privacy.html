@@ -26,7 +26,7 @@ hr{border:0;border-top:1px solid var(--line);margin:30px 0 18px}
 <a class="logo" href="./">Spot2Clip</a>
 <div class="card">
 <h1>Política de Privacidade</h1>
-<p class="mute">Última atualização: 27 de outubro de 2026</p>
+<p class="mute">Última atualização: 28 de outubro de 2026</p>
 
 <p>O <b>Spot2Clip</b> é uma ferramenta gratuita que transforma uma playlist do Spotify em uma playlist de videoclipes no YouTube. Esta página explica, de forma direta, quais dados o app usa e o que ele faz (e não faz) com eles.</p>
 
@@ -40,9 +40,10 @@ hr{border:0;border-top:1px solid var(--line);margin:30px 0 18px}
 
 <h2>Onde seus dados ficam</h2>
 <ul>
-  <li><b>No seu navegador:</b> a autorização do Google (token de acesso) fica guardada apenas na sessão do seu navegador e some quando você fecha a aba. A lista de músicas, os clipes escolhidos e o progresso ficam salvos localmente no seu navegador para você poder continuar depois. Você pode apagá-los limpando os dados do site.</li>
+  <li><b>No seu navegador:</b> a autorização do Google (token de acesso, válido por cerca de 1 hora) e um marcador de que você já autorizou o app ficam guardados no seu navegador, para você não precisar repetir os avisos do Google. Você pode apagá-los a qualquer momento pelo link “Esquecer meu login do Google neste navegador” no rodapé do site. Se a playlist for grande, o app também guarda aqui o progresso das partes e o histórico das playlists criadas (“Minhas playlists”), junto com o nome e a foto do seu canal do YouTube, usados só para exibir seu perfil no topo do site. A lista de músicas, os clipes escolhidos e o progresso ficam salvos localmente no seu navegador para você poder continuar depois. Você pode apagá-los limpando os dados do site.</li>
   <li><b>Em nossos servidores:</b> o app <b>não armazena</b> seus dados pessoais, tokens, listas de músicas nem playlists. Não há conta, cadastro nem banco de dados de usuários.</li>
   <li><b>Contador de uso:</b> um serviço auxiliar (Cloudflare Workers) guarda apenas números agregados do limite diário do YouTube, sem identificar ninguém.</li>
+  <li><b>Memória de clipes:</b> para economizar o limite diário do YouTube, o serviço auxiliar guarda, para cada música pesquisada (artista e título), os dados <b>públicos</b> dos vídeos encontrados (código, título, canal, duração e visualizações) por até 1 ano, e os reaproveita em conversões de outras pessoas. Isso não está ligado a você nem à sua conta.</li>
   <li><b>Playlists do Spotify:</b> quando você cola o link de uma playlist <b>pública</b>, esse serviço auxiliar lê a lista de músicas (título, artista, duração) para devolvê-la ao seu navegador. Nada disso é guardado. O app não pede login nem acesso à sua conta do Spotify.</li>
 </ul>
 
