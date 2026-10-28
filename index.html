@@ -695,8 +695,7 @@ function histAdd(pid,title,part,count){
 const me=()=>store.get('s2c_me');
 function renderMe(){
   const m=me(),b=$('#btnMine');
-  const show=!!m||hist().length>0||Object.keys(multis()).length>0;
-  b.hidden=!show;
+  b.hidden=false;
   if(m){$('#meName').textContent=m.name;if(m.photo){$('#meImg').src=m.photo;$('#meImg').hidden=false}else $('#meImg').hidden=true}
   else{$('#meName').textContent='Minhas playlists';$('#meImg').hidden=true}
 }
