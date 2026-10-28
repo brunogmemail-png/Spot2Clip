@@ -300,7 +300,8 @@ footer a{color:inherit}
   </div>
   <div class="flex" style="margin:6px 0 0"><h2 class="grow" style="font-size:24px;letter-spacing:-.6px">Minhas playlists</h2><button class="sm" id="btnMineBack">← Voltar ao início</button></div>
   <div id="mineBody"></div>
-  <small class="mute">Esta lista fica salva só neste navegador.</small>
+  <small class="mute" id="mineNote"></small>
+  <p style="margin:6px 0 0"><button class="lnk" id="delData" hidden>Apagar meu histórico salvo</button></p>
 </section>
 
 <!-- PASSO 3 -->
@@ -501,7 +502,7 @@ function ytLogin(){
       callback:r=>{
         if(r.error) return rej(new Error('Não foi possível entrar com o Google ('+(r.error_description||r.error)+').'));
         yt={token:r.access_token,exp:Date.now()+(r.expires_in-60)*1000};
-        ytSave();renderChips();res();setTimeout(()=>{if(!me())loadMe()},0);
+        ytSave();renderChips();res();setTimeout(()=>{if(!me())loadMe();syncDown()},0);
       },
       error_callback:e=>rej(new Error(e&&e.type==='popup_failed_to_open'?'O navegador bloqueou a janela do Google. Permita pop-ups para este site e tente de novo.':'Login do Google cancelado.'))
     }).requestAccessToken();
@@ -573,8 +574,9 @@ let state=null;    // {name,rows,playlistId,ytTitle,privacy}
 let busy=false;
 let multi=null,selPart=0;   // playlist dividida em partes: {sig,name,tracks,size,mode,playlistId,doneParts}
 const multis=()=>store.get('s2c_multis',{})||{};
-const saveMulti=()=>{if(multi){const a=multis();a[multi.sig]=multi;store.set('s2c_multis',a)}};
-const clearMulti=(sig)=>{const a=multis();delete a[sig||(multi&&multi.sig)];store.set('s2c_multis',a);multi=null};
+const dropped=()=>store.get('s2c_dropped',[])||[];
+const saveMulti=()=>{if(multi){const a=multis();a[multi.sig]=multi;store.set('s2c_multis',a);store.set('s2c_dropped',dropped().filter(x=>x!==multi.sig));syncSoon()}};
+const clearMulti=(sig)=>{sig=sig||(multi&&multi.sig);const a=multis();delete a[sig];store.set('s2c_multis',a);if(sig&&!dropped().includes(sig))store.set('s2c_dropped',[...dropped(),sig].slice(-100));multi=null;syncSoon()};
 const partsOf=m=>splitParts(m.tracks,m.size);
 const partsLeft=m=>partsOf(m).map((_,i)=>i).filter(i=>!m.doneParts.includes(i));
 function multiFor(s){
@@ -839,8 +841,48 @@ function histAdd(pid,title,part,count){
   const a=hist();let e=a.find(x=>x.pid===pid);
   if(!e){e={pid,title,counts:{},n:part?part.n:1,date:Date.now()};a.unshift(e)}
   e.title=title;e.counts[part?part.i:0]=count;e.updated=Date.now();
-  store.set('s2c_hist',a.slice(0,100));
+  store.set('s2c_hist',a.slice(0,100));syncSoon();
 }
+/* ----- histórico na nuvem do Spot2Clip (ligado ao seu canal do YouTube) ----- */
+let cloudOk=false,syncT=null;
+const userCall=(path,extra)=>ytOk()?memPost(path,{token:yt.token,...(extra||{})}):Promise.resolve(null);
+function mergeUser(rem){
+  rem=rem||{};
+  const drop=[...new Set([...dropped(),...(rem.dropped||[])])].slice(-100);
+  const hm={};
+  [...(rem.hist||[]),...hist()].forEach(e=>{
+    const x=hm[e.pid];
+    if(!x){hm[e.pid]={...e,counts:{...e.counts}};return}
+    Object.entries(e.counts||{}).forEach(([k,v])=>x.counts[k]=Math.max(x.counts[k]||0,v));
+    if((e.updated||0)>(x.updated||0)){x.updated=e.updated;x.title=e.title}
+    x.date=Math.min(x.date||e.date||0,e.date||x.date||0);x.n=Math.max(x.n||1,e.n||1);
+  });
+  const mm={};
+  [...Object.values(rem.multis||{}),...Object.values(multis())].forEach(m=>{
+    if(drop.includes(m.sig)||!Array.isArray(m.tracks)) return;
+    const x=mm[m.sig];
+    if(!x){mm[m.sig]={...m,doneParts:[...(m.doneParts||[])]};return}
+    x.doneParts=[...new Set([...x.doneParts,...(m.doneParts||[])])].sort((a,b)=>a-b);
+    x.playlistId=x.playlistId||m.playlistId||null;
+  });
+  Object.keys(mm).forEach(k=>{if(!partsLeft(mm[k]).length){delete mm[k];if(!drop.includes(k))drop.push(k)}});
+  store.set('s2c_hist',Object.values(hm).sort((a,b)=>(b.updated||0)-(a.updated||0)).slice(0,100));
+  store.set('s2c_multis',mm);store.set('s2c_dropped',drop.slice(-100));
+}
+async function syncUp(){
+  const j=await userCall('/me/put',{data:{hist:hist(),multis:multis(),dropped:dropped()}});
+  if(j) cloudOk=true;
+}
+function syncSoon(){if(!ytOk())return;clearTimeout(syncT);syncT=setTimeout(syncUp,1500)}
+async function syncDown(){
+  const j=await userCall('/me/get'); if(!j) return;
+  cloudOk=true;
+  if(j.data) mergeUser(j.data);
+  await syncUp();
+  renderMe();checkResumeBanner();
+  if(!$('#s4').hidden) renderMine();
+}
+const checkResumeBanner=()=>{try{if(!$('#s1').hidden)checkResume()}catch{}};
 const me=()=>store.get('s2c_me');
 function renderMe(){
   const m=me();
@@ -852,6 +894,8 @@ function renderMe(){
   $('#pfSub').textContent=m?'Canal do YouTube conectado':'Entre com o Google para ver seu nome e sua foto aqui.';
   $('#pfBtn').textContent=m?'Sair deste navegador':'Entrar com Google';
   $('#pfBtn').className=m?'sm':'sm primary';
+  $('#mineNote').textContent=cloudOk&&ytOk()?'Seu histórico fica salvo na sua conta do Spot2Clip, ligada ao seu canal do YouTube, e aparece em qualquer navegador onde você entrar.':cloudOk||!ytOk()&&ytSeen()?'Entre com o Google para sincronizar seu histórico e vê-lo em qualquer navegador.':'Esta lista fica salva só neste navegador.';
+  $('#delData').hidden=!(cloudOk&&ytOk());
   if(ytOk()&&!m) loadMe();
 }
 async function loadMe(){
@@ -880,7 +924,14 @@ function renderMine(){
   $('#mineBody').innerHTML=out||'<div class="empty">Você ainda não criou nenhuma playlist por aqui.<br><br><button class="primary" id="goHome">Criar a primeira</button></div>';
   const g=$('#goHome'); if(g) g.onclick=()=>{show('s1')};
 }
-$('#btnMine').onclick=()=>{if(busy)return;renderMine();show('s4')};
+$('#btnMine').onclick=()=>{if(busy)return;renderMine();show('s4');if(ytOk())syncDown()};
+$('#delData').onclick=async()=>{
+  if(!confirm('Apagar todo o histórico salvo do Spot2Clip? As playlists já criadas continuam no seu YouTube.')) return;
+  const j=await userCall('/me/delete');
+  if(!j) return toast('Não consegui apagar agora. Entre com o Google e tente de novo.');
+  ['s2c_hist','s2c_multis','s2c_dropped'].forEach(k=>store.del(k));
+  multi=null;renderMine();renderMe();toast('Histórico apagado.');
+};
 $('#pfBtn').onclick=async()=>{
   if(me()){if(confirm('Sair deste navegador? Sua lista de playlists continua salva.')){ytForget();toast('Você saiu neste navegador.')}return}
   try{await ytLogin();await loadMe()}catch(e){toast(e.message)}
@@ -943,7 +994,7 @@ function checkResume(){
 }
 
 /* ============ init ============ */
-renderChips();checkResume();renderQuota();refreshQuota();
+renderChips();checkResume();renderQuota();refreshQuota();if(ytOk())syncDown();
 setInterval(refreshQuota,60000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshQuota()});
 if(!cfg().googleClientId) $('#notReady').hidden=false;
